@@ -10,10 +10,12 @@ QUESTIONS_DIR = __pathing__ / 'questions'
 QUESTIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 class question:
-    def __init__(self, R_n: int, body: str, entries: dict = {},
+    def __init__(self, R_n: int, statement: str, label: str, simulationTime: int, entries: dict = {}, 
                  illustration_fileName: str = '', illustration_width: int = 0, table: list = []):
         self.R_n = R_n
-        self.body = body
+        self.body = {'statement'        : statement,
+                     'label'            : label,
+                     'simulationTime'   : simulationTime}
         self.entries = entries
         self.illustration = {'fileName': illustration_fileName,
                              'width': illustration_width}
@@ -40,11 +42,11 @@ class question:
             except IOError as e:
                 warnings.warn(f"Não foi possível salvar a questão em '{file_path}': {e}")
         else:
-            warnings.warn(f"Atenção: Uma questão com o mesmo corpo (body) já existe. A operação de salvar foi cancelada.")
+            warnings.warn(f"Atenção: Uma questão com o mesmo corpo (statement) já existe. A operação de salvar foi cancelada.")
 
     def verify(self) -> bool:
         """
-        Verifica se já existe uma questão com o mesmo corpo (body) no diretório QUESTIONS_DIR.
+        Verifica se já existe uma questão com o mesmo corpo (statement) no diretório QUESTIONS_DIR.
         Utiliza o método from_dict() para criar objetos a partir dos arquivos e __eq__() para comparar.
         Retorna True se a questão for única (pode ser salva) e False caso contrário.
         """
@@ -91,13 +93,13 @@ class question:
 
     def __eq__(self, otherQuestion) -> bool:
         """
-        Verifica se os corpos (body) das questões são iguais.
+        Verifica se os corpos (statement) das questões são iguais.
         O método foi ajustado para seguir a convenção do Python:
         retornar True se os objetos forem iguais, e False caso contrário.
         """
         if not isinstance(otherQuestion, question):
             return NotImplemented  # Boa prática para tipos incompatíveis
-        return self.body == otherQuestion.body
+        return self.body['statement'] == otherQuestion.statement
 
     def to_dict(self) -> dict:
         """
@@ -107,7 +109,9 @@ class question:
         illustration_filename = self.illustration.get('fileName', '')
         return {
             'R_n': self.R_n,
-            'body': self.body,
+            'statement': self.body['statement'],
+            'label' : self.body['label'],
+            'simulationTime' : self.body['simulationTime'],
             'entries': self.entries,
             'illustration_fileName': str(illustration_filename) if illustration_filename else '',
             'illustration_width': self.illustration.get('width', 0),
@@ -130,7 +134,7 @@ class question:
 
         return cls(
             R_n=data.get('R_n'),
-            body=data.get('body'),
+            statement=data.get('statement'),
             entries=data.get('entries', {}),
             illustration_fileName=data.get('illustration_fileName', ''),
             illustration_width=data.get('illustration_width', 0),
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     # Exemplo 1: Questão com imagem
     q1 = question(
         R_n='2',
-        body='Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.',
+        statement='Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.',
         entries={},
         illustration_fileName=str(__pathing__ / 'image' / 'E0F1.pdf')
     )
@@ -152,14 +156,14 @@ if __name__ == "__main__":
     # Exemplo 2: Questão com tabela
     q2 = question(
         R_n='3',
-        body='Utilizando atribuições condicionais (when-else), escrever em VHDL e simular uma entidade que descreva um multiplexador 8 para 1 (8x1). Essa entidade deve ter dois vetores de entrada (S com 3 bits e D com 8 bits) e um bit de saída (Y). A tabela verdade do multiplexador é apresentada abaixo.',
+        statement='Utilizando atribuições condicionais (when-else), escrever em VHDL e simular uma entidade que descreva um multiplexador 8 para 1 (8x1). Essa entidade deve ter dois vetores de entrada (S com 3 bits e D com 8 bits) e um bit de saída (Y). A tabela verdade do multiplexador é apresentada abaixo.',
         table=[['Entrada (S)', 'Saida (Y)'], ['000', 'D0'], ['001', 'D1'], ['010', 'D2'], ['011', 'D3'], ['100', 'D4'], ['101', 'D5'], ['110', 'D6'], ['111', 'D7']]
     )
     
     # Exemplo 3: Questão duplicada para teste
     q3 = question(
         R_n='2',
-        body='Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.'
+        statement='Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.'
     )
 
     # --- TESTES ---
@@ -183,6 +187,6 @@ if __name__ == "__main__":
     q1.save()  # NÃO deve salvar, pois já existe. Deve emitir um aviso.
     
     # Criando mais uma questão para o R_n = 2 para testar id_code_criation
-    q4 = question(R_n='2', body='Este é um corpo de questão completamente novo para o R_n 2.')
+    q4 = question(R_n='2', statement='Este é um corpo de questão completamente novo para o R_n 2.')
     print("\nTentando salvar q4 (nova questão para R_n=2)...")
     q4.save()  # Deve salvar como A2E2.txt
