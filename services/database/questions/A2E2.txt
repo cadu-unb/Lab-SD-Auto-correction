@@ -1,8 +1,0 @@
-{
-    "R_n": "2",
-    "body": "Este é um corpo de questão completamente novo para o R_n 2.",
-    "entries": {},
-    "illustration_fileName": "",
-    "illustration_width": 0,
-    "table": []
-}

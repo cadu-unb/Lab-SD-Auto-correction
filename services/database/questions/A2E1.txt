@@ -1,8 +1,0 @@
-{
-    "R_n": "2",
-    "body": "Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.",
-    "entries": {},
-    "illustration_fileName": "C:\\Users\\anton\\OneDrive\\Área de Trabalho\\THIAGO\\Lab-SD-Auto-correction\\services\\database\\image\\E0F1.pdf",
-    "illustration_width": 0,
-    "table": []
-}

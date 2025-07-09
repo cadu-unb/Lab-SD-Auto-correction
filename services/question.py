@@ -10,11 +10,17 @@ QUESTIONS_DIR = __pathing__ / 'questions'
 QUESTIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 class question:
-    def __init__(self, R_n: int, statement: str, label: str, simulationTime: int, entries: dict = {}, 
-                 illustration_fileName: str = '', illustration_width: int = 0, table: list = []):
+    def __init__(self, R_n: int, 
+                 statement: str, 
+                 labels: str, 
+                 simulationTime: int, 
+                 entries: dict = {}, 
+                 illustration_fileName: str = '', 
+                 illustration_width: int = 0, 
+                 table: list = []):
         self.R_n = R_n
         self.body = {'statement'        : statement,
-                     'label'            : label,
+                     'labels'            : labels,
                      'simulationTime'   : simulationTime}
         self.entries = entries
         self.illustration = {'fileName': illustration_fileName,
@@ -110,7 +116,7 @@ class question:
         return {
             'R_n': self.R_n,
             'statement': self.body['statement'],
-            'label' : self.body['label'],
+            'labels' : self.body['labels'],
             'simulationTime' : self.body['simulationTime'],
             'entries': self.entries,
             'illustration_fileName': str(illustration_filename) if illustration_filename else '',
