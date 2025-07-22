@@ -1,0 +1,50 @@
+{
+    "R_n": "3",
+    "statement": [
+        "Utilizando atribuições condicionais (when-else), escrever em VHDL e simular uma entidade que descreva um multiplexador 8 para 1 (8x1). Essa entidade deve ter dois vetores de entrada (S com 3 bits e D com 8 bits) e um bit de saída (Y). A tabela verdade do multiplexador é apresentada abaixo."
+    ],
+    "modelsim_labels": {},
+    "simulationTime": 0,
+    "entries": {},
+    "illustration_fileName": "",
+    "illustration_width": 0,
+    "math_expression": "",
+    "table": [
+        [
+            "Entrada (S)",
+            "Saida (Y)"
+        ],
+        [
+            "000",
+            "D0"
+        ],
+        [
+            "001",
+            "D1"
+        ],
+        [
+            "010",
+            "D2"
+        ],
+        [
+            "011",
+            "D3"
+        ],
+        [
+            "100",
+            "D4"
+        ],
+        [
+            "101",
+            "D5"
+        ],
+        [
+            "110",
+            "D6"
+        ],
+        [
+            "111",
+            "D7"
+        ]
+    ]
+}

@@ -1,0 +1,96 @@
+
+\documentclass{article}
+\input{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/LaTex/tex/pacotes.tex}
+
+\begin{document}
+\input{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/LaTex/tex/cabecalho_final.tex}
+
+
+\vspace{-0.25cm}
+\begin{center}
+    {\fontsize{16pt}{18pt}\selectfont \textbf{Laboratório de Sistemas Digitais\\Experimento 02}}
+\end{center}
+\vspace{0.3cm}
+\hrule
+
+\vspace{1cm}
+\noindent\textbf{OBJETIVO:}
+\begin{itemize}
+\item Aprender a descrever circuitos lógicos em VHDL.
+\item Simular um somador e um multiplexador.
+\item Familiarizar-se com o ModelSim.
+\end{itemize}
+\vspace{0.5cm}
+\noindent\textbf{INSTRUÇÕES:}
+\begin{itemize}
+\item Leia atentamente cada questão.
+\item Implemente o código VHDL.
+\item Anexe ao relatório o código-fonte e a simulação.
+\end{itemize}
+\vspace{0.5cm}
+\noindent\textbf{AVALIAÇÃO:}
+
+\begin{itemize}
+    \item O relatório é individual e receberá uma nota de 0 a 10, considerando os seguintes aspectos:
+    \begin{itemize}
+        \item Documentação do código, contida no relatorio (pdf) e no codigo vhdl- 20\% da nota do projeto;
+        \item Compilação do código, apresentada no relatorio do projeto econfirmado pelo codigo vhd -10\% da nota do projeto;
+        \item Simulação do código, apresentada no relatório do projeto econfirmado pelo codigo vhd - 70\% da nota do projeto.
+    \end{itemize}
+\end{itemize}
+    
+\newpage
+
+
+\input{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/LaTex/tex/cabecalho_final.tex}
+
+\subsection*{Questão 01}
+Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.
+
+\vspace{1cm}
+\begin{center}
+    \includegraphics[width=0cm]{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/image/E0F1.pdf}
+\end{center}
+
+\subsection*{Questão 02}
+Utilizando atribuições condicionais (when-else), escrever em VHDL e simular uma entidade que descreva um multiplexador 8 para 1 (8x1). Essa entidade deve ter dois vetores de entrada (S com 3 bits e D com 8 bits) e um bit de saída (Y). A tabela verdade do multiplexador é apresentada abaixo.
+
+\vspace{1cm}
+\begin{center}
+\begin{tabular}{l l}
+\hline
+\textbf{Entrada (S)} & \textbf{Saida (Y)} \\
+\hline
+000 & D0 \\
+001 & D1 \\
+010 & D2 \\
+011 & D3 \\
+100 & D4 \\
+101 & D5 \\
+110 & D6 \\
+111 & D7 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+
+\input{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/LaTex/tex/cabecalho_final.tex}
+
+
+\section*{Material para Consulta}
+\subsection*{Modelo de Relatório}
+\begin{itemize}
+    \item Para o Experimento 1, utilize este \href{link\_do\_modelo\_de\_relatorio\_1}{template}.
+    \item Para os demais experimentos, utilize o \href{link\_do\_modelo\_de\_relatorio\_ModelSim}{modelo para ModelSim}.
+\end{itemize}
+\subsection*{Arquivos de Teoria}
+\begin{itemize}
+    \item Introdução ao VHDL: \href{http://seusite.com/intro_vhdl.pdf}{http://seusite.com/intro\_vhdl.pdf}
+    \item Guia do ModelSim: \href{http://seusite.com/guia_modelsim.pdf}{http://seusite.com/guia\_modelsim.pdf}
+\end{itemize}
+
+
+
+\end{document}

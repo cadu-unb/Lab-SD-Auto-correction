@@ -1,0 +1,15 @@
+\begin{tikzpicture}[remember picture, overlay]
+    % Caminhos corrigidos para acessar a pasta 'template' a partir da pasta 'tex'
+	\node(LogoUnb) at (current page.north west) [anchor=north west, xshift=3cm, yshift=-2cm]{\includegraphics[width=2.25cm]{unb.pdf}};
+	\node(LogoFT) at (current page.north east) [anchor=north east, xshift=-2cm, yshift=-1.9cm]{\includegraphics[width=3.3cm]{dep.pdf}};
+	\node(someText) at (current page.north) [yshift=-2.4cm, align=center]{\textbf{\large Laboratório de Sistemas Digitais 2025/2}};
+\end{tikzpicture}
+\setstretch{1.5}
+\vspace{-0.5cm}
+\hrule
+
+\begin{tikzpicture}[remember picture, overlay]
+	\node(someline) at (current page.south) [yshift=2cm] {\rule{\textwidth}{0.4pt}};
+    % Caminho corrigido para acessar a pasta 'template'
+	\node(ender) at (current page.south) [xshift=0cm, yshift=1.5cm]{\includegraphics[width=16cm]{adress.pdf}};
+\end{tikzpicture}

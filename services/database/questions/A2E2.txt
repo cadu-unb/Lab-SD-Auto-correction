@@ -1,0 +1,13 @@
+{
+    "R_n": "2",
+    "statement": [
+        "Este é um corpo de questão completamente novo para o R_n 2."
+    ],
+    "modelsim_labels": {},
+    "simulationTime": 0,
+    "entries": {},
+    "illustration_fileName": "",
+    "illustration_width": 0,
+    "math_expression": "",
+    "table": []
+}
