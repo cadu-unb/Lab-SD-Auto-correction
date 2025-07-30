@@ -6,7 +6,7 @@
     "modelsim_labels": {},
     "simulationTime": 0,
     "entries": {},
-    "illustration_fileName": "E0F1.pdf",
+    "illustration_fileName": "E0F1.png",
     "illustration_width": 0,
     "math_expression": "",
     "table": []

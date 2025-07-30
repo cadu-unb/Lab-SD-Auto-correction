@@ -1,5 +1,3 @@
-import os
-import json
 import subprocess
 from pathlib import Path
 from paths import DIR_QUESTIONS, DIR_LATEX_TEX, DIR_LATEX_OUT, DIR_IMAGE, DIR_TEMPLATE

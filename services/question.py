@@ -6,6 +6,17 @@ from pathlib import Path
 from paths import DIR_QUESTIONS, DIR_IMAGE
 
 class Question:
+    """
+    R_n: int -- Número do relatório sugerido.
+    statement: list -- Corpo da questão, pode possuir até duas parte.
+    simulationTime: int -- Tempo máximo para execução da simulação.
+    entries: dict -- Entradas para personalizar o corpo de uma questão.
+    modelsim_labels: dict -- Alvos para Automatização da correção.
+    illustration_fileName: str -- Nome do arquivo.
+    illustration_width: int -- 
+    math_expression: str -- 
+    table: list -- 
+    """
     def __init__(self, R_n: int,
                  statement: list,
                  simulationTime: int = 0,
@@ -123,7 +134,7 @@ if __name__ == "__main__":
         R_n='2',
         statement=['Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.'],
         entries={},
-        illustration_fileName=str(DIR_IMAGE / 'E0F1.pdf')
+        illustration_fileName=str(DIR_IMAGE / 'E0F1.png')
     )
 
     # Exemplo 2: Questão com tabela
