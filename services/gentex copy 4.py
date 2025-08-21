@@ -43,7 +43,7 @@ def gerar_capa(num_experimento: str, objetivos: list, instrucoes: list) -> str:
     return f"""
 \\vspace{{-0.25cm}}
 \\begin{{center}}
-    {{\\fontsize{{16pt}}{{18pt}}\\selectfont \\textbf{{Laboratório de Sistemas Digitais\\\\Experimento {num_experimento}}}}}
+    {{\\fontsize{{16pt}}{{18pt}} \\textbf{{Laboratório de Sistemas Digitais\\\\Experimento {num_experimento}}}}}
 \\end{{center}}
 \\vspace{{0.3cm}}
 \\hrule
@@ -88,24 +88,39 @@ def gerar_questionario(lista_questoes: list, diretorio_questoes: Path = DIR_QUES
 
             has_elements = q.math_expression or (q.illustration and q.illustration.get('fileName')) or q.table
             
-            # Adiciona espaço ANTES dos elementos, se houver algum
-            if has_elements:
-                questionario_latex += "\n\\vspace{1cm}\n"
+            # # Adiciona espaço ANTES dos elementos, se houver algum
+            # if has_elements:
+            #     questionario_latex += "\n\\vspace{1cm}\n"
 
             # Processa os elementos (matemática, ilustração, tabela)
             if q.math_expression:
-                questionario_latex += f"\\begin{{equation*}}\n\t{q.math_expression}\n\\end{{equation*}}\n"
+                questionario_latex += "\n\\vspace{-0.5cm}\n"
+                
+                if len(q.math_expression) == 1:
+                    # Uma única equação
+                    questionario_latex += f"\\begin{{equation*}}\n"
+                    questionario_latex += f"\t{q.math_expression[0]}\n"
+                    questionario_latex += f"\\end{{equation*}}\n"
+                else:
+                    # Múltiplas equações usando gather* (centraliza cada uma)
+                    questionario_latex += "\\begin{gather*}\n"
+                    for j, equation in enumerate(q.math_expression):
+                        if j == len(q.math_expression) - 1:
+                            questionario_latex += f"\t{equation}\n"
+                        else:
+                            questionario_latex += f"\t{equation} \\\\\n"
+                    questionario_latex += "\\end{gather*}\n"
             
             if q.illustration and q.illustration.get('fileName'):
-                # --- MODIFICAÇÃO (REQ 4) ---
-                # Reconstrói o caminho completo da imagem usando DIR_IMAGE
+                # Usando DIR_IMAGE
+                questionario_latex += "\n\\vspace{.5cm}\n"
                 img_filename = q.illustration['fileName']
                 img_path = str(DIR_IMAGE / img_filename).replace('\\', '/')
-                print('\n', '\n', '\n', img_path, '\n', '\n', '\n')
-                width = q.illustration.get('width', 10)
+                width = 10 if q.illustration.get('width', 10) == 0 else q.illustration.get('width', 10)
                 questionario_latex += f"\\begin{{center}}\n    \\includegraphics[width={width}cm]{{{img_path}}}\n\\end{{center}}\n"
 
             if q.table:
+                questionario_latex += "\n\\vspace{.5cm}\n"
                 num_cols = len(q.table[0])
                 cols_format = " ".join(["l"] * num_cols)
                 questionario_latex += f"\\begin{{center}}\n\\begin{{tabular}}{{{cols_format}}}\n\\hline\n"

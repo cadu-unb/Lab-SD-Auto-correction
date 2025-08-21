@@ -6,8 +6,8 @@
     "modelsim_labels": {},
     "simulationTime": 0,
     "entries": {},
-    "illustration_fileName": "E0F1.png",
+    "illustration_fileName": "",
     "illustration_width": 0,
-    "math_expression": "",
+    "math_expression": ["S = A \\oplus B \\oplus C_{in}", "C_{out} = A \\cdot B + A \\cdot C_{in} + B \\cdot C_{in}"],
     "table": []
 }

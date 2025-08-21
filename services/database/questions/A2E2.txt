@@ -8,6 +8,6 @@
     "entries": {},
     "illustration_fileName": "",
     "illustration_width": 0,
-    "math_expression": "",
+    "math_expression": [],
     "table": []
 }

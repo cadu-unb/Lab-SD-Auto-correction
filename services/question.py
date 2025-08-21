@@ -13,8 +13,8 @@ class Question:
     entries: dict -- Entradas para personalizar o corpo de uma questão.
     modelsim_labels: dict -- Alvos para Automatização da correção.
     illustration_fileName: str -- Nome do arquivo.
-    illustration_width: int -- 
-    math_expression: str -- 
+    illustration_width: int -- Tamanho para apresentar a imagem.
+    math_expression: [str] -- Lista de equações.
     table: list -- 
     """
     def __init__(self, R_n: int,
@@ -24,7 +24,7 @@ class Question:
                  modelsim_labels: dict = {},
                  illustration_fileName: str = '',
                  illustration_width: int = 0,
-                 math_expression: str = '' ,
+                 math_expression: list = [] ,
                  table: list = []):
         if type(statement) == str:
             statement = [statement]

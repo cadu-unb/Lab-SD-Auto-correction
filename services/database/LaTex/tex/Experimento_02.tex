@@ -8,7 +8,7 @@
 
 \vspace{-0.25cm}
 \begin{center}
-    {\fontsize{16pt}{18pt}\selectfont \textbf{Laboratório de Sistemas Digitais\\Experimento 02}}
+    {\fontsize{16pt}{18pt} \textbf{Laboratório de Sistemas Digitais\\Experimento 02}}
 \end{center}
 \vspace{0.3cm}
 \hrule
@@ -47,15 +47,16 @@
 \subsection*{Questão 01}
 Descrever em VHDL e simular no ModelSim uma entidade com três bits de entrada (A, B e Cin) e dois bits de saída (S e Cout) que implemente um somador completo, descrito pelas seguintes funções lógicas.
 
-\vspace{1cm}
-\begin{center}
-    \includegraphics[width=0cm]{C:/Users/Cadu/Desktop/Thiago/Lab-SD-Auto-correction/services/database/image/E0F1.png}
-\end{center}
+\vspace{-0.5cm}
+\begin{gather*}
+	S = A \oplus B \oplus C_{in} \\
+	C_{out} = A \cdot B + A \cdot C_{in} + B \cdot C_{in}
+\end{gather*}
 
 \subsection*{Questão 02}
 Utilizando atribuições condicionais (when-else), escrever em VHDL e simular uma entidade que descreva um multiplexador 8 para 1 (8x1). Essa entidade deve ter dois vetores de entrada (S com 3 bits e D com 8 bits) e um bit de saída (Y). A tabela verdade do multiplexador é apresentada abaixo.
 
-\vspace{1cm}
+\vspace{.5cm}
 \begin{center}
 \begin{tabular}{l l}
 \hline
