@@ -8,7 +8,7 @@ import matplotlib.image as mpimg
 import matplotlib.patches as patches
 
 # ==================== CONFIGURAÇÕES ====================
-IMG_PATH = r"C:\Users\Cadu\Desktop\Thiago\Lab-SD-Auto-correction\services\database\_Rascunhos\PNG\Prancheta 1.png"
+IMG_PATH = r"C:\Users\Cadu\Desktop\Thiago\Lab-SD-Auto-correction\services\database\_A\Prancheta 1.png"
 TICK_SECONDS = 1.0          # 1 ciclo = 1 segundo
 INITIAL_OFF_CYCLES = 10     # 30 ciclos iniciais OFF (intermitente)
 RADIUS = 22                 # raio das "lâmpadas" desenhadas
