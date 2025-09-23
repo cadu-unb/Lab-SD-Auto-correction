@@ -2,3 +2,5 @@
 venv/
 .DS_Store
 Thumbs.db
+services/database/_Rascunhos
+services/database/LaTex

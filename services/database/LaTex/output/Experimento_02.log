@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.7.1)  20 AUG 2025 23:15
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.7.1)  21 AUG 2025 22:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -804,6 +804,9 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 )
 (C:\Users\Cadu\AppData\Local\Programs\MiKTeX\tex/latex/parskip\parskip.sty
 Package: parskip 2021-03-14 v2.0h non-zero parskip adjustments
+)
+(C:\Users\Cadu\AppData\Local\Programs\MiKTeX\tex/latex/xcolor\svgnam.def
+File: svgnam.def 2024/09/29 v3.02 Predefined colors according to SVG 1.1 (UK)
 ))
 (C:\Users\Cadu\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdft
 ex.def
@@ -1044,10 +1047,10 @@ Package rerunfilecheck Info: File `Experimento_02.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 23408 strings out of 468220
- 436300 string characters out of 5433355
- 831465 words of memory out of 5000000
- 51535 multiletter control sequences out of 15000+600000
+ 23566 strings out of 468220
+ 438928 string characters out of 5433355
+ 840572 words of memory out of 5000000
+ 51690 multiletter control sequences out of 15000+600000
  634258 words of font info for 56 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  107i,8n,110p,687b,576s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1063,7 +1066,7 @@ iKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/Cadu/AppData/Local/Pro
 grams/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/Cadu/AppData/Lo
 cal/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
 Output written on C:\Users\Cadu\Desktop\Thiago\Lab-SD-Auto-correction\services\
-database\LaTex\output\Experimento_02.pdf (3 pages, 123820 bytes).
+database\LaTex\output\Experimento_02.pdf (3 pages, 123972 bytes).
 PDF statistics:
  262 PDF objects out of 1000 (max. 8388607)
  9 named destinations out of 1000 (max. 500000)
