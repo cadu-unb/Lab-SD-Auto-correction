@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Máquina de refrigerante – FSM Moore</title>
+<style>
+  :root{
+    --bg:#f2f3f6; --card:#fff; --txt:#14161a; --mut:#5b6270; --line:#c9ced7; --acc:#1456a8; --acc2:#e8f0fb;
+    --ok:#1f9d55; --warn:#d97706; --bad:#c0392b; --node:#fff; --nodeline:#2a2f38; --chip:#eef0f4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#14161a; --card:#1d2026; --txt:#e8e9ec; --mut:#9aa1ad; --line:#363c47; --acc:#6aa8ff; --acc2:#223149;
+           --node:#262b33; --nodeline:#aab1bd; --chip:#2a2f38; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,sans-serif;line-height:1.4}
+  h1{font-size:20px;margin:0 0 2px} h2{font-size:14px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  header p{margin:0 0 14px;color:var(--mut);font-size:14px}
+  .grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;max-width:1400px;margin:0 auto}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+  button,select{font:inherit;color:var(--txt);background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  button.prim{background:var(--acc);color:#fff;border-color:var(--acc)}
+  button[aria-pressed="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+  .lab{font-size:13px;color:var(--mut);min-width:68px}
+  .regA{font-family:ui-monospace,Consolas,monospace;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+  .leds{display:flex;gap:8px;flex-wrap:wrap}
+  .led{display:flex;align-items:center;gap:6px;font-size:13px;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .led i{width:12px;height:12px;border-radius:50%;background:#7a808c;display:inline-block}
+  .led.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  #expl{font-size:14px;min-height:64px;background:var(--acc2);border-radius:8px;padding:8px 10px}
+  svg text{font-family:system-ui,Segoe UI,sans-serif}
+
+  /* diagrama de estados */
+  .no circle,.no rect{fill:var(--node);stroke:var(--nodeline);stroke-width:2}
+  .no.saida rect{stroke-dasharray:none}
+  .no text{fill:var(--txt);font-size:13px;text-anchor:middle}
+  .no .nome{font-weight:700;font-size:15px} .no .sub{font-size:11px;fill:var(--mut)}
+  .no.atual circle,.no.atual rect{fill:var(--acc2);stroke:var(--acc);stroke-width:4}
+  .no.atual .nome{fill:var(--acc)}
+  .no.inicial circle.dupla{fill:none}
+  .ed{fill:none;stroke:var(--mut);stroke-width:1.8;marker-end:url(#seta)}
+  .ed.ativa,.flash{stroke:var(--acc);stroke-width:5;marker-end:url(#setaA)}
+  .flash{fill:none;animation:somem 1.1s ease-out forwards}
+  @keyframes somem{from{opacity:1}to{opacity:.15}}
+  .rot{font-size:12px;font-weight:700;fill:var(--txt);text-anchor:middle;paint-order:stroke;stroke:var(--card);stroke-width:4px}
+  .badge{font-size:11px;fill:var(--mut);text-anchor:middle;font-style:italic}
+  .nota{font-size:12px;fill:var(--mut)}
+
+  /* tabela */
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{border:1px solid var(--line);padding:3px 6px;text-align:center}
+  th{background:var(--chip);font-weight:600}
+  td.e{text-align:left;font-weight:600}
+  tr.atual td{background:var(--acc2)} td.usada{outline:3px solid var(--acc);outline-offset:-3px;font-weight:700}
+  .s1{color:var(--ok);font-weight:700}
+
+  /* máquina */
+  .lata{opacity:0}
+  .lata.show{opacity:1;animation:queda .7s cubic-bezier(.3,.1,.5,1)}
+  @keyframes queda{from{transform:translateY(-60px)}to{transform:translateY(0)}}
+  .moeda{opacity:0} .moeda.show{opacity:1;animation:sobe .5s ease-out}
+  @keyframes sobe{from{transform:translateY(-14px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .piscar{animation:pisca .25s}
+  @keyframes pisca{50%{fill:#ffe066}}
+  canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0d1117}
+  .nota-pe{font-size:12px;color:var(--mut);margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Máquina de refrigerante — máquina de estados Moore</h1>
+  <p>Experimento 07. Moedas de R$ 0,25 e R$ 0,50; libera o refrigerante (e o troco) ao chegar a R$ 1,00 ou mais; cancelamento devolve o valor inserido. 9 estados. Tudo muda só na borda de subida do clock; o reset é assíncrono.</p>
+</header>
+
+<div class="grid">
+  <div class="col">
+    <section class="card">
+      <h2>Máquina</h2>
+      <svg id="maq" viewBox="0 0 300 420" role="img" aria-label="Máquina de refrigerante com display, indicadores e bandeja de retirada">
+        <rect x="14" y="8" width="272" height="404" rx="18" fill="#b7312c" stroke="#5c1411" stroke-width="3"/>
+        <text x="150" y="38" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" letter-spacing="3">REFRI-MATIC</text>
+        <rect x="38" y="52" width="224" height="120" rx="8" fill="#23272e" stroke="#000" stroke-width="2"/>
+        <g id="latasDecor">
+          <rect x="50" y="62" width="24" height="40" rx="4" fill="#e4572e"/><rect x="80" y="62" width="24" height="40" rx="4" fill="#e4572e"/>
+          <rect x="110" y="62" width="24" height="40" rx="4" fill="#f2b134"/><rect x="140" y="62" width="24" height="40" rx="4" fill="#f2b134"/>
+          <rect x="170" y="62" width="24" height="40" rx="4" fill="#3d8bd9"/><rect x="200" y="62" width="24" height="40" rx="4" fill="#3d8bd9"/>
+          <rect x="50" y="116" width="24" height="40" rx="4" fill="#7fbf5c"/><rect x="80" y="116" width="24" height="40" rx="4" fill="#7fbf5c"/>
+          <rect x="110" y="116" width="24" height="40" rx="4" fill="#9b59b6"/><rect x="140" y="116" width="24" height="40" rx="4" fill="#9b59b6"/>
+          <rect x="170" y="116" width="24" height="40" rx="4" fill="#e4572e"/><rect x="200" y="116" width="24" height="40" rx="4" fill="#f2b134"/>
+        </g>
+        <rect x="38" y="186" width="150" height="58" rx="6" fill="#06150b" stroke="#000" stroke-width="2"/>
+        <text id="disp" x="46" y="214" font-size="26" font-family="ui-monospace,Consolas,monospace" fill="#43ff7a">R$ 0,00</text>
+        <text id="disp2" x="46" y="236" font-size="12" font-family="ui-monospace,Consolas,monospace" fill="#43ff7a">insira moedas</text>
+        <rect x="204" y="190" width="58" height="12" rx="3" fill="#111"/>
+        <rect id="fenda" x="208" y="194" width="50" height="4" rx="2" fill="#555"/>
+        <text x="233" y="218" text-anchor="middle" font-size="10" fill="#fff">MOEDAS</text>
+        <circle id="ledClk" cx="233" cy="234" r="6" fill="#444" stroke="#000"/>
+        <text x="233" y="256" text-anchor="middle" font-size="10" fill="#fff">clock</text>
+
+        <g font-size="11" fill="#fff" text-anchor="middle">
+          <circle id="mS"   cx="70"  cy="276" r="9" fill="#444" stroke="#000"/><text x="70"  y="300">refri</text>
+          <circle id="m25"  cx="150" cy="276" r="9" fill="#444" stroke="#000"/><text x="150" y="300">troco 25</text>
+          <circle id="m50"  cx="230" cy="276" r="9" fill="#444" stroke="#000"/><text x="230" y="300">troco 50</text>
+        </g>
+        <rect x="38" y="316" width="224" height="84" rx="8" fill="#1a1c20" stroke="#000" stroke-width="2"/>
+        <text x="46" y="332" font-size="10" fill="#aaa">RETIRADA</text>
+        <g id="lata" class="lata">
+          <rect x="62" y="342" width="34" height="50" rx="6" fill="#e4572e" stroke="#fff" stroke-width="1.5"/>
+          <rect x="62" y="356" width="34" height="14" fill="#fff"/>
+          <text x="79" y="367" text-anchor="middle" font-size="9" font-weight="700" fill="#b7312c">COLA</text>
+        </g>
+        <g id="m25c" class="moeda"><circle cx="150" cy="370" r="15" fill="#c0c5cc" stroke="#555" stroke-width="2"/><text x="150" y="375" text-anchor="middle" font-size="13" font-weight="700" fill="#222">25</text></g>
+        <g id="m50c" class="moeda"><circle cx="205" cy="370" r="19" fill="#e2b93b" stroke="#7a5d0c" stroke-width="2"/><text x="205" y="376" text-anchor="middle" font-size="15" font-weight="700" fill="#2a1d00">50</text></g>
+      </svg>
+      <div class="leds" style="margin-top:8px">
+        <span class="led" id="lS"><i></i>S refrigerante</span>
+        <span class="led" id="l25"><i></i>D25 devolve 0,25</span>
+        <span class="led" id="l50"><i></i>D50 devolve 0,50</span>
+      </div>
+      <p class="nota-pe">Saídas Moore: dependem só do estado atual. Ficam acesas enquanto a máquina estiver nele, até o próximo clock.</p>
+    </section>
+
+    <section class="card">
+      <h2>Entradas e clock</h2>
+      <div class="row"><span class="lab">Entrada A</span>
+        <button id="b25">Moeda R$ 0,25 <small>(01)</small></button>
+        <button id="b50">Moeda R$ 0,50 <small>(10)</small></button>
+        <button id="bC">Cancelar <small>(11)</small></button>
+      </div>
+      <div class="row"><span class="lab">A agora</span><span class="regA" id="regA">00</span>
+        <small style="color:var(--mut)">lida na próxima borda ↑ e depois volta a 00</small></div>
+      <div class="row"><span class="lab">Clock</span>
+        <button id="bPulso" class="prim">↑ Pulso de clock</button>
+        <button id="bAuto" aria-pressed="false">▶ Automático</button>
+        <select id="vel" aria-label="Período do clock automático">
+          <option value="2000">2 s</option><option value="1400" selected>1,4 s</option><option value="900">0,9 s</option><option value="500">0,5 s</option>
+        </select>
+      </div>
+      <div class="row"><span class="lab">Reset</span>
+        <button id="bReset">Reset assíncrono</button>
+        <small style="color:var(--mut)">age na hora, sem esperar o clock</small></div>
+      <div class="row"><span class="lab">Cenário</span>
+        <select id="cen" aria-label="Cenário de teste"></select>
+        <button id="bCen">Executar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>O que aconteceu</h2>
+      <div id="expl">Insira moedas e dê um pulso de clock, ou escolha um cenário.</div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Diagrama de estados</h2>
+      <svg id="dg" viewBox="0 0 960 540" style="width:100%;height:auto" role="img" aria-label="Diagrama de estados da máquina de refrigerante">
+        <defs>
+          <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--mut)"/></marker>
+          <marker id="setaA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--acc)"/></marker>
+        </defs>
+        <g id="arestas"></g>
+        <g id="flashes"></g>
+        <g id="nos"></g>
+        <text class="nota" x="700" y="330">Estados de saída (retângulos):</text>
+        <text class="nota" x="700" y="348">o próximo estado é decidido como em S0:</text>
+        <text class="nota" x="700" y="372">00 ou 11  →  S0</text>
+        <text class="nota" x="700" y="390">01 (R$ 0,25)  →  S25</text>
+        <text class="nota" x="700" y="408">10 (R$ 0,50)  →  S50</text>
+        <text class="nota" x="700" y="440">↺ = permanece no estado</text>
+      </svg>
+    </section>
+
+    <section class="card">
+      <h2>Formas de onda (como no ModelSim)</h2>
+      <canvas id="onda" width="900" height="290"></canvas>
+      <p class="nota-pe">Cada coluna é um ciclo de clock: A é o valor lido na borda ↑ e o estado e as saídas são os valores logo depois dela. A coluna de reset mostra a ação assíncrona, com o clock parado.</p>
+    </section>
+
+    <section class="card">
+      <h2>Tabela de estados</h2>
+      <table id="tab"></table>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ===================== MODELO ===================== */
+/* saídas = [S, D25, D50]; prox[A] com A = 0(00) 1(01) 2(10) 3(11) */
+const E = {
+  S0:    {rot:'R$ 0,00', saidas:[0,0,0], prox:['S0','S25','S50','S0'],  pos:[90,260],  ini:true},
+  S25:   {rot:'R$ 0,25', saidas:[0,0,0], prox:['S25','S50','S75','R25'], pos:[270,260]},
+  S50:   {rot:'R$ 0,50', saidas:[0,0,0], prox:['S50','S75','SODA','R50'], pos:[450,260]},
+  S75:   {rot:'R$ 0,75', saidas:[0,0,0], prox:['S75','SODA','SODA25','R75'], pos:[630,260]},
+  SODA:  {rot:'refri',   saidas:[1,0,0], saida:true, pos:[540,80],  sub:'soma R$ 1,00'},
+  SODA25:{rot:'refri+25',saidas:[1,1,0], saida:true, pos:[790,80],  sub:'soma R$ 1,25'},
+  R25:   {rot:'devolve 0,25', saidas:[0,1,0], saida:true, pos:[270,450], sub:'cancelou'},
+  R50:   {rot:'devolve 0,50', saidas:[0,0,1], saida:true, pos:[450,450], sub:'cancelou'},
+  R75:   {rot:'devolve 0,75', saidas:[0,1,1], saida:true, pos:[630,450], sub:'cancelou'},
+};
+for (const k of ['SODA','SODA25','R25','R50','R75']) E[k].prox = E.S0.prox;   // depois de uma saída: como S0
+const ORDEM = ['S0','S25','S50','S75','SODA','SODA25','R25','R50','R75'];
+const BITS = ['00','01','10','11'];
+const NOME_A = ['nenhuma ação','moeda de R$ 0,25','moeda de R$ 0,50','cancelamento'];
+const DISPLAY = {
+  S0:['R$ 0,00','insira moedas'], S25:['R$ 0,25','insira moedas'], S50:['R$ 0,50','insira moedas'], S75:['R$ 0,75','insira moedas'],
+  SODA:['R$ 1,00','refri liberado!'], SODA25:['R$ 1,25','refri + troco 0,25'],
+  R25:['CANCELADO','devolve R$ 0,25'], R50:['CANCELADO','devolve R$ 0,50'], R75:['CANCELADO','devolve 0,50+0,25'],
+};
+const VALOR = {S0:0,S25:25,S50:50,S75:75};
+
+function razao(de, a, para){
+  const d = E[de], p = E[para];
+  if (d.saida) {
+    if (a === 0) return 'Estado de saída: sem moeda, volta ao estado inicial. Se ficasse aqui, entregaria outro refri ou devolveria mais moedas.';
+    if (a === 3) return 'Estado de saída: novo cancelamento, volta ao estado inicial (não há nada a devolver).';
+    return 'Estado de saída: já entrou uma nova moeda, então vai direto para ' + para + ' sem passar por S0.';
+  }
+  if (a === 0) return 'Sem ação: permanece em ' + de + '.';
+  if (a === 3) return de === 'S0' ? 'Cancelou sem ter inserido nada: continua em S0.' : 'Cancelou antes de chegar a R$ 1,00: devolve a quantia inserida.';
+  const soma = VALOR[de] + (a === 1 ? 25 : 50);
+  if (soma >= 100) return 'Soma R$ ' + (soma/100).toFixed(2).replace('.',',') + ' ≥ R$ 1,00: libera o refrigerante' + (soma > 100 ? ' e devolve R$ 0,25 de troco.' : '.');
+  return 'Soma R$ ' + (soma/100).toFixed(2).replace('.',',') + ': ainda abaixo de R$ 1,00.';
+}
+
+/* ===================== ESTADO DA SIMULAÇÃO ===================== */
+let estado = 'S0', pendente = 0, ultimaCol = null, hist = [];
+let scen = null, autoId = null, autoPorCenario = false;
+
+const SCEN = [
+  ['25 + 25 + 50 → refrigerante',            [1,1,2,0,0]],
+  ['50 + 50 → refrigerante',                 [2,2,0,0]],
+  ['75 + 50 → refri e troco de 0,25',        [1,2,2,0,0]],
+  ['75 e cancelar → devolve 0,75',           [1,2,3,0,0]],
+  ['Cancelar e já inserir 50 (dica 3.1)',    [1,2,3,2,2,0,0]],
+  ['Cancelar duas vezes (dica 3.2)',         [1,3,3,0]],
+  ['Todas as moedas de 25',                  [1,1,1,1,0,0]],
+];
+
+/* ===================== DIAGRAMA ===================== */
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, pai) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (pai) pai.appendChild(e); return e; };
+const centro = k => E[k].pos;
+const RAIO = 40;
+
+function caminho(a, b, ctrl){
+  const [ax, ay] = centro(a), [bx, by] = centro(b);
+  const alvoA = ctrl || [bx, by], alvoB = ctrl || [ax, ay];
+  const t = (x0, y0, x1, y1) => { const d = Math.hypot(x1-x0, y1-y0) || 1; return [x0 + (x1-x0)/d*RAIO, y0 + (y1-y0)/d*RAIO]; };
+  const [sx, sy] = t(ax, ay, alvoA[0], alvoA[1]), [ex, ey] = t(bx, by, alvoB[0], alvoB[1]);
+  return ctrl ? `M${sx} ${sy} Q${ctrl[0]} ${ctrl[1]} ${ex} ${ey}` : `M${sx} ${sy} L${ex} ${ey}`;
+}
+
+/* arestas desenhadas: [de, para, rótulo, ponto de controle ou null, posição do rótulo] */
+const ARESTAS = [
+  ['S0','S25','01',null,[180,248]], ['S25','S50','01',null,[360,248]], ['S50','S75','01',null,[540,248]],
+  ['S0','S50','10',[270,130],[270,170]], ['S25','S75','10',[450,390],[450,325]],
+  ['S25','R25','11',null,[270,360]], ['S50','R50','11',null,[450,380]], ['S75','R75','11',null,[630,360]],
+  ['S50','SODA','10',null,[480,160]], ['S75','SODA','01',null,[600,160]], ['S75','SODA25','10',null,[728,160]],
+];
+const arestaEl = {};
+for (const [a, b, r, c, lp] of ARESTAS){
+  arestaEl[a + '>' + b] = el('path', {class:'ed', d:caminho(a, b, c)}, document.getElementById('arestas'));
+  const t = el('text', {class:'rot', x:lp[0], y:lp[1]}, document.getElementById('arestas')); t.textContent = r;
+}
+const noEl = {};
+for (const k of ORDEM){
+  const [x, y] = E[k].pos, d = E[k];
+  const g = el('g', {class:'no' + (d.saida ? ' saida' : '') + (d.ini ? ' inicial' : ''), id:'no-' + k}, document.getElementById('nos'));
+  if (d.saida){
+    el('rect', {x:x-58, y:y-34, width:116, height:68, rx:14}, g);
+    el('text', {class:'nome', x, y:y-8}, g).textContent = k;
+    el('text', {class:'sub', x, y:y+8}, g).textContent = d.rot;
+    el('text', {class:'sub', x, y:y+24}, g).textContent = 'S=' + d.saidas[0] + '  D25=' + d.saidas[1] + '  D50=' + d.saidas[2];
+  } else {
+    el('circle', {cx:x, cy:y, r:RAIO}, g);
+    if (d.ini) el('circle', {class:'dupla', cx:x, cy:y, r:RAIO-6, stroke:'var(--nodeline)', 'stroke-width':1.5}, g);
+    el('text', {class:'nome', x, y:y-2}, g).textContent = k;
+    el('text', {class:'sub', x, y:y+16}, g).textContent = d.rot;
+    const b = el('text', {class:'badge', x:x-6, y:y-RAIO-8}, g); b.textContent = d.ini ? '↺ 00, 11' : '↺ 00';
+  }
+  noEl[k] = g;
+}
+
+function flash(de, para){
+  const g = document.getElementById('flashes');
+  if (de === para){
+    const [x, y] = centro(de);
+    const c = el('circle', {class:'flash', cx:x, cy:y, r:RAIO+6, 'marker-end':'none'}, g);
+    setTimeout(() => c.remove(), 1200); return;
+  }
+  let d;
+  if (arestaEl[de + '>' + para]) d = arestaEl[de + '>' + para].getAttribute('d');
+  else {   // saída -> S0/S25/S50: curva dinâmica
+    const [ax, ay] = centro(de), [bx, by] = centro(para);
+    const mx = (ax + bx) / 2, my = (ay + by) / 2, dx = bx - ax, dy = by - ay, n = Math.hypot(dx, dy) || 1;
+    d = caminho(de, para, [mx - dy/n * 70, my + dx/n * 70]);
+  }
+  const p = el('path', {class:'flash', d}, g);
+  setTimeout(() => p.remove(), 1200);
+}
+
+/* ===================== TABELA ===================== */
+const tab = document.getElementById('tab');
+tab.innerHTML = '<tr><th>Estado</th><th>A=00</th><th>A=01 (0,25)</th><th>A=10 (0,50)</th><th>A=11 (cancela)</th><th>S</th><th>D25</th><th>D50</th></tr>' +
+  ORDEM.map(k => `<tr id="tr-${k}"><td class="e">${k} <small style="color:var(--mut)">${E[k].rot}</small></td>` +
+    [0,1,2,3].map(a => `<td id="c-${k}-${a}">${E[k].prox[a]}</td>`).join('') +
+    E[k].saidas.map(v => `<td class="${v ? 's1' : ''}">${v}</td>`).join('') + '</tr>').join('');
+
+/* ===================== ONDAS ===================== */
+const cv = document.getElementById('onda'), cx = cv.getContext('2d');
+const LINHAS = ['clk','reset','A[1:0]','estado','S (refri)','D25','D50'];
+const NCOL = 14, ESQ = 96, ALT = 38;
+function bit1(v, x0, x1, y0, cor){ cx.strokeStyle = cor; cx.lineWidth = 2; const hi = y0 + 8, lo = y0 + 28; return [hi, lo]; }
+
+function desenhaOnda(){
+  const W = cv.width, H = cv.height, cw = (W - ESQ - 8) / NCOL;
+  cx.clearRect(0, 0, W, H); cx.fillStyle = '#0d1117'; cx.fillRect(0, 0, W, H);
+  cx.font = '13px ui-monospace,Consolas,monospace'; cx.textBaseline = 'middle';
+  const dados = hist.slice(-NCOL), off = NCOL - dados.length;
+  // grade
+  cx.strokeStyle = '#1e2733'; cx.lineWidth = 1;
+  for (let i = 0; i <= NCOL; i++){ const x = ESQ + i * cw; cx.beginPath(); cx.moveTo(x, 6); cx.lineTo(x, 6 + LINHAS.length * ALT); cx.stroke(); }
+  LINHAS.forEach((n, r) => {
+    const y0 = 6 + r * ALT;
+    cx.fillStyle = '#9fb0c6'; cx.textAlign = 'left'; cx.fillText(n, 8, y0 + ALT/2);
+    cx.strokeStyle = '#1e2733'; cx.beginPath(); cx.moveTo(0, y0 + ALT); cx.lineTo(W, y0 + ALT); cx.stroke();
+  });
+  const nivel = (r, c) => { const y0 = 6 + r * ALT; return [y0 + 9, y0 + ALT - 9]; };
+  // sinais de 1 bit
+  const um = (r, f, meio) => {
+    const [hi, lo] = nivel(r); cx.strokeStyle = '#4ade80'; cx.lineWidth = 2; cx.beginPath();
+    let ult = null;
+    dados.forEach((d, i) => {
+      const x0 = ESQ + (off + i) * cw, x1 = x0 + cw;
+      const pts = meio ? meio(d) : [f(d)];
+      const ys = pts.map(v => v ? hi : lo);
+      if (ult === null) cx.moveTo(x0, ys[0]); else cx.lineTo(x0, ys[0]);
+      if (pts.length === 2){ cx.lineTo(x0 + cw/2, ys[0]); cx.lineTo(x0 + cw/2, ys[1]); cx.lineTo(x1, ys[1]); ult = ys[1]; }
+      else { cx.lineTo(x1, ys[0]); ult = ys[0]; }
+    });
+    cx.stroke();
+  };
+  um(0, null, d => d.tipo === 'clk' ? [1, 0] : [0]);
+  um(1, d => d.tipo === 'rst' ? 1 : 0);
+  um(4, d => d.saidas[0]); um(5, d => d.saidas[1]); um(6, d => d.saidas[2]);
+  // barramentos (A e estado): agrupa valores iguais consecutivos
+  const barra = (r, val) => {
+    const y0 = 6 + r * ALT, hi = y0 + 9, lo = y0 + ALT - 9, mid = (hi + lo) / 2;
+    let i = 0;
+    while (i < dados.length){
+      let j = i; while (j + 1 < dados.length && val(dados[j + 1]) === val(dados[i])) j++;
+      const x0 = ESQ + (off + i) * cw + 3, x1 = ESQ + (off + j + 1) * cw - 3;
+      cx.strokeStyle = '#facc15'; cx.lineWidth = 2; cx.beginPath();
+      cx.moveTo(x0, mid); cx.lineTo(x0 + 5, hi); cx.lineTo(x1 - 5, hi); cx.lineTo(x1, mid); cx.lineTo(x1 - 5, lo); cx.lineTo(x0 + 5, lo); cx.closePath(); cx.stroke();
+      cx.fillStyle = '#fde68a'; cx.textAlign = 'center'; cx.fillText(val(dados[i]), (x0 + x1) / 2, mid + 1);
+      i = j + 1;
+    }
+  };
+  barra(2, d => d.tipo === 'rst' ? '--' : BITS[d.A]);
+  barra(3, d => d.estado);
+  // coluna mais recente
+  if (dados.length){ const x = ESQ + (NCOL - 1) * cw; cx.fillStyle = 'rgba(80,140,255,.10)'; cx.fillRect(x, 6, cw, LINHAS.length * ALT); }
+}
+
+/* ===================== INTERFACE ===================== */
+const $ = id => document.getElementById(id);
+function reinicia(cl, id){ const e = $(id); e.classList.remove(cl); void e.getBoundingClientRect(); e.classList.add(cl); }
+
+function atualizaUI(deFlash, a, para){
+  for (const k of ORDEM){ noEl[k].classList.toggle('atual', k === estado); $('tr-' + k).classList.toggle('atual', k === estado); }
+  document.querySelectorAll('td.usada').forEach(t => t.classList.remove('usada'));
+  if (ultimaCol) $('c-' + ultimaCol.de + '-' + ultimaCol.a).classList.add('usada');
+  const [s, d25, d50] = E[estado].saidas;
+  [['lS', s, 'mS'], ['l25', d25, 'm25'], ['l50', d50, 'm50']].forEach(([id, v, m]) => {
+    $(id).classList.toggle('on', !!v); $(m).setAttribute('fill', v ? '#43ff7a' : '#444');
+  });
+  const [l1, l2] = DISPLAY[estado]; $('disp').textContent = l1; $('disp2').textContent = l2;
+  $('disp').setAttribute('font-size', l1.length > 8 ? 20 : 26);
+  $('lata').classList.toggle('show', !!s); if (s) reinicia('show', 'lata');
+  $('m25c').classList.toggle('show', !!d25); if (d25) reinicia('show', 'm25c');
+  $('m50c').classList.toggle('show', !!d50); if (d50) reinicia('show', 'm50c');
+  $('regA').textContent = BITS[pendente];
+  desenhaOnda();
+}
+
+function pulsoClock(){
+  let a = pendente;
+  if (scen){ a = scen.seq[scen.i++]; }
+  pendente = 0;
+  const de = estado, para = E[de].prox[a];
+  estado = para;
+  ultimaCol = {de, a};
+  hist.push({tipo:'clk', A:a, estado:para, saidas:E[para].saidas});
+  if (hist.length > 60) hist.shift();
+  flash(de, para);
+  reinicia('piscar', 'ledClk'); $('ledClk').setAttribute('fill', '#ffe066'); setTimeout(() => $('ledClk').setAttribute('fill', '#444'), 220);
+  $('expl').innerHTML = `<b>↑ clock:</b> ${de} + A=${BITS[a]} (${NOME_A[a]}) → <b>${para}</b>` +
+    (E[para].saida ? ` &nbsp;·&nbsp; saídas: S=${E[para].saidas[0]}, D25=${E[para].saidas[1]}, D50=${E[para].saidas[2]}` : '') +
+    `<br><span style="color:var(--mut)">${razao(de, a, para)}</span>`;
+  if (scen && scen.i >= scen.seq.length){
+    scen = null; if (autoPorCenario){ setTimeout(() => { if (!scen) paraAuto(); }, 0); autoPorCenario = false; }
+  }
+  atualizaUI(de, a, para);
+}
+
+function reset(){
+  scen = null; pendente = 0; estado = 'S0'; ultimaCol = null;
+  hist.push({tipo:'rst', A:0, estado:'S0', saidas:E.S0.saidas});
+  $('expl').innerHTML = '<b>Reset assíncrono:</b> a máquina volta a S0 imediatamente, sem esperar o clock.';
+  flash('S0', 'S0'); atualizaUI();
+}
+
+function ligaAuto(){ if (autoId) return; autoId = setInterval(pulsoClock, +$('vel').value); $('bAuto').setAttribute('aria-pressed', 'true'); $('bAuto').textContent = '⏸ Automático'; }
+function paraAuto(){ clearInterval(autoId); autoId = null; $('bAuto').setAttribute('aria-pressed', 'false'); $('bAuto').textContent = '▶ Automático'; }
+
+function entrada(v){ if (scen) return; pendente = v; $('regA').textContent = BITS[v]; reinicia('piscar', 'fenda'); }
+$('b25').onclick = () => entrada(1);
+$('b50').onclick = () => entrada(2);
+$('bC').onclick  = () => entrada(3);
+$('bPulso').onclick = () => { if (!scen) pulsoClock(); };
+$('bAuto').onclick = () => { autoId ? paraAuto() : ligaAuto(); autoPorCenario = false; };
+$('vel').onchange = () => { if (autoId){ paraAuto(); ligaAuto(); } };
+$('bReset').onclick = reset;
+
+SCEN.forEach(([n], i) => { const o = document.createElement('option'); o.value = i; o.textContent = n; $('cen').appendChild(o); });
+$('bCen').onclick = () => {
+  reset();
+  const [nome, seq] = SCEN[+$('cen').value];
+  scen = {seq, i:0};
+  $('expl').innerHTML = `<b>Cenário:</b> ${nome}. A sequência de entradas A é: ${seq.map(a => BITS[a]).join(', ')}.`;
+  if (!autoId){ autoPorCenario = true; ligaAuto(); }
+};
+
+hist.push({tipo:'rst', A:0, estado:'S0', saidas:E.S0.saidas});
+atualizaUI();
+</script>
+</body>
+</html>
