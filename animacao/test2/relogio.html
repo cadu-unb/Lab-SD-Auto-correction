@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relógio digital</title>
+<style>
+  :root{--bg:#14161a;--panel:#1d2026;--on:#4dff7a;--off:rgba(77,255,122,.07);--txt:#e6e6e6;--mut:#8a919c}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+       background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,sans-serif;padding:16px}
+  .tela{background:var(--panel);border:1px solid #2c313a;border-radius:16px;padding:28px 32px;
+        box-shadow:0 12px 40px rgba(0,0,0,.45) inset,0 2px 0 #2c313a}
+  .rel{display:flex;align-items:center;gap:clamp(6px,2vw,18px)}
+  .dig{display:flex;gap:clamp(4px,1vw,10px)}
+  svg.d{width:clamp(34px,9vw,84px);height:auto;display:block}
+  svg.d path{fill:var(--off);transition:fill .08s}
+  svg.d path.on{fill:var(--on);filter:drop-shadow(0 0 6px var(--on))}
+  .sep{display:flex;flex-direction:column;gap:clamp(14px,4vw,34px)}
+  .sep i{width:clamp(6px,1.4vw,12px);height:clamp(6px,1.4vw,12px);border-radius:50%;background:var(--on);
+         box-shadow:0 0 8px var(--on);transition:opacity .1s}
+  .sep.apagado i{opacity:.12;box-shadow:none}
+  .info{text-align:center;color:var(--mut);font-size:14px;min-height:20px;font-variant-numeric:tabular-nums}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  button{background:#2a2f38;color:var(--txt);border:1px solid #3a404b;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer}
+  button:hover{background:#343a45}
+  button[aria-pressed="true"]{border-color:var(--on);color:var(--on)}
+  button:disabled{opacity:.4;cursor:default}
+</style>
+</head>
+<body>
+
+<div class="tela" role="timer" aria-live="off" id="tela">
+  <div class="rel" id="rel"></div>
+</div>
+<div class="info" id="info"></div>
+<div class="bar">
+  <button id="mRelogio" aria-pressed="true">Relógio</button>
+  <button id="mCrono" aria-pressed="false">Cronômetro</button>
+  <button id="go" disabled>▶ Iniciar</button>
+  <button id="zera" disabled>↺ Zerar</button>
+</div>
+
+<script>
+/* ---------- display de 7 segmentos (SVG) ----------
+   segmentos: a=topo  b=sup.dir  c=inf.dir  d=base  e=inf.esq  f=sup.esq  g=meio */
+const SEG = {  // polígonos num quadro 60×104
+  a:'M10 4 L50 4 L44 12 L16 12 Z',
+  b:'M52 6 L52 48 L46 52 L46 14 Z',
+  c:'M52 56 L52 98 L46 90 L46 52 Z',
+  d:'M10 100 L50 100 L44 92 L16 92 Z',
+  e:'M8 56 L8 98 L14 90 L14 52 Z',
+  f:'M8 6 L8 48 L14 52 L14 14 Z',
+  g:'M12 52 L18 46 L42 46 L48 52 L42 58 L18 58 Z',
+};
+const MAPA = {0:'abcdef',1:'bc',2:'abged',3:'abgcd',4:'fgbc',5:'afgcd',6:'afgedc',7:'abc',8:'abcdefg',9:'abcdfg'};
+
+function criaDigito(){
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 60 104'); svg.setAttribute('class', 'd');
+  const paths = {};
+  for (const k in SEG){ const p = document.createElementNS(NS, 'path'); p.setAttribute('d', SEG[k]); svg.appendChild(p); paths[k] = p; }
+  svg.set = n => { const on = MAPA[n]; for (const k in paths) paths[k].classList.toggle('on', on.includes(k)); };
+  return svg;
+}
+
+// HH : MM : SS  →  6 dígitos e 2 separadores
+const rel = document.getElementById('rel');
+const digs = [];
+const seps = [];
+for (let g = 0; g < 3; g++){
+  const grupo = document.createElement('div'); grupo.className = 'dig';
+  for (let i = 0; i < 2; i++){ const d = criaDigito(); digs.push(d); grupo.appendChild(d); }
+  rel.appendChild(grupo);
+  if (g < 2){
+    const s = document.createElement('div'); s.className = 'sep'; s.innerHTML = '<i></i><i></i>';
+    seps.push(s); rel.appendChild(s);
+  }
+}
+
+function mostra(h, m, s){
+  const v = [h, m, s].flatMap(n => [Math.floor(n/10), n % 10]);
+  digs.forEach((d, i) => d.set(v[i]));
+}
+
+/* ---------- modos ---------- */
+let modo = 'relogio', rodando = false, acumulado = 0, inicio = 0;
+const $ = id => document.getElementById(id);
+const dois = n => String(n).padStart(2, '0');
+
+function tick(){
+  let h, m, s, info;
+  if (modo === 'relogio'){
+    const d = new Date();
+    h = d.getHours(); m = d.getMinutes(); s = d.getSeconds();
+    info = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+    seps.forEach(x => x.classList.toggle('apagado', d.getMilliseconds() >= 500));   // pisca 1 Hz
+  } else {
+    const ms = acumulado + (rodando ? performance.now() - inicio : 0);
+    const tot = Math.floor(ms / 1000);
+    h = Math.floor(tot / 3600) % 100; m = Math.floor(tot / 60) % 60; s = tot % 60;
+    info = `${dois(Math.floor(ms % 1000 / 10))} centésimos`;
+    seps.forEach(x => x.classList.toggle('apagado', !rodando && ms > 0));
+  }
+  mostra(h, m, s);
+  $('info').textContent = info;
+  document.title = `${dois(h)}:${dois(m)}:${dois(s)} · Relógio digital`;
+  requestAnimationFrame(tick);
+}
+
+function setModo(novo){
+  modo = novo;
+  $('mRelogio').setAttribute('aria-pressed', novo === 'relogio');
+  $('mCrono').setAttribute('aria-pressed', novo === 'crono');
+  $('go').disabled = $('zera').disabled = novo === 'relogio';
+}
+$('mRelogio').onclick = () => setModo('relogio');
+$('mCrono').onclick = () => setModo('crono');
+$('go').onclick = () => {
+  if (rodando){ acumulado += performance.now() - inicio; rodando = false; $('go').textContent = '▶ Continuar'; }
+  else { inicio = performance.now(); rodando = true; $('go').textContent = '⏸ Pausar'; }
+};
+$('zera').onclick = () => { rodando = false; acumulado = 0; $('go').textContent = '▶ Iniciar'; };
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
