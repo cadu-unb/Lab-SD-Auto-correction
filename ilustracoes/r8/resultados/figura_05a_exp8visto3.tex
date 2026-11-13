@@ -1,0 +1,29 @@
+% Figura 5(a) — interface externa exp8visto3 (Questão 3)
+% Descrição: ../descricoes/figura_05a_exp8visto3.md
+% CORREÇÃO DO ORIGINAL: o PDF rotula as duas saídas de 3 bits como "semaforoA".
+% Aqui a segunda é semaforoB (semáforo da direção leste/oeste), como exige a Questão 3.
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \mostrarumtrue
+  \caixa{6.6}{5.4}{exp8visto3}
+
+  \entrada{1.20}{ligadesliga}{1}{}
+  \entrada{2.15}{sensorA}{1}{A = norte--sul}
+  \entrada{3.15}{sensorB}{1}{B = leste--oeste}
+  \entrada{4.15}{clock}{1}{}
+
+  \grupodir{0.55}{tempo BCD}
+  \saida{1.25}{cont\_dezena}{4}{}
+  \saida{2.05}{cont\_unidade}{4}{}
+  \divdir{2.6}
+  \grupodir{2.95}{luzes}
+  \saida{3.75}{semaforoA}{3}{norte--sul}
+  \saida{4.65}{semaforoB}{3}{leste--oeste}
+
+  \rodape{10.2}{%
+    \textbf{Vetores de luz (3 bits):} um bit por cor, na ordem \textbf{vermelho, amarelo, verde}.\\[2pt]
+    Com \texttt{ligadesliga} desativado, os semáforos alternam entre amarelo e apagado, a cada 1 s.}
+\end{tikzpicture}
+\end{document}

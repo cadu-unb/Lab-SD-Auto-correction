@@ -1,0 +1,30 @@
+% Figura 1 — interface do contador módulo 100 (Questão 1)
+% Descrição: ../descricoes/figura_01_contador100_sistema.md
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \caixa{6.2}{6.6}{Contador módulo 100}
+
+  % --- entradas ---
+  \grupoesq{0.55}{controle}
+  \entrada{1.25}{reset}{1}{síncrono}
+  \entrada{2.10}{clock}{1}{1 Hz}
+  \entrada{2.95}{/enable}{1}{ativo em nível baixo}
+  \entrada{3.80}{load}{1}{síncrono}
+  \divesq{4.35}
+  \grupoesq{4.65}{valor de carga}
+  \entrada{5.25}{dezload}{4}{}
+  \entrada{6.05}{uniload}{4}{}
+
+  % --- saídas ---
+  \grupodir{0.55}{saída BCD}
+  \saida{1.40}{cont\_dezena}{4}{dezena}
+  \saida{2.40}{cont\_unidade}{4}{unidade}
+
+  \rodape{9.8}{%
+    \textbf{Prioridade:} \texttt{reset} $>$ \texttt{load} $>$ contagem.
+    \textbf{Arquitetura:} dois \texttt{contador10} em cascata (dezena e unidade).\\[2pt]
+    \textit{Exemplo:} para o número 42, \texttt{cont\_dezena} = 0100 e \texttt{cont\_unidade} = 0010.}
+\end{tikzpicture}
+\end{document}

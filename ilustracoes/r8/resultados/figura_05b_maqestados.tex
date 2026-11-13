@@ -1,0 +1,47 @@
+% Figura 5(b) — entidade maqestados (Questão 3)
+% Descrição: ../descricoes/figura_05b_maqestados.md
+% CORREÇÃO DO ORIGINAL: o PDF rotula as duas saídas de 3 bits como "semaforoA".
+% Aqui a segunda é semaforoB.
+% INTERPRETAÇÃO (não está no PDF): T6 <-> amarelo (6 s), T5 <-> vermelho nos dois (5 s),
+% T20 <-> troca antecipada, T60 <-> fim do verde. Usada apenas na legenda.
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \mostrarumtrue
+  \caixa{7.4}{8.1}{maqestados}
+
+  % --- entradas ---
+  \grupoesq{0.55}{controle e tráfego}
+  \entrada{1.25}{ligadesliga}{1}{}
+  \entrada{2.05}{clock}{1}{}
+  \entrada{2.90}{sensorA}{1}{A = norte--sul}
+  \entrada{3.80}{sensorB}{1}{B = leste--oeste}
+  \divesq{4.40}
+  \grupoesq{4.70}{marcos de tempo}
+  \entrada{5.35}{T5}{1}{}
+  \entrada{6.15}{T6}{1}{}
+  \entrada{6.95}{T20}{1}{}
+  \entrada{7.75}{T60}{1}{}
+  \origem{3.0}{do \textit{top level}}
+  \origem{6.55}{de \texttt{timeflags}}
+
+  % --- saídas ---
+  \grupodir{0.55}{saídas Moore}
+  \saida{1.35}{semaforoA}{3}{estado atual}
+  \saida{2.35}{semaforoB}{3}{estado atual}
+  \divdir{3.05}
+  \grupodir{3.40}{saída Mealy}
+  \saida{4.30}{resetcounter}{1}{1 se nextState $\neq$ currentState}
+  \destino{1.35}{luzes norte/sul}
+  \destino{2.35}{luzes leste/oeste}
+  \destino{4.30}{\texttt{reset} do \texttt{contador100}}
+
+  \rodape{12.0}{%
+    \textbf{Ciclo esperado:} verde por até 60 s (troca antecipada a partir de 20 s se houver carro
+    esperando na outra via e nenhum atravessando) $\rightarrow$ amarelo 6 s $\rightarrow$ vermelho nos dois 5 s.
+    Sistema desligado: amarelo e apagado alternando a cada 1 s.\\[2pt]
+    \texttt{semaforoA}/\texttt{semaforoB} dependem só do estado atual (Moore);
+    \texttt{resetcounter} também depende das entradas que definem o próximo estado (Mealy).}
+\end{tikzpicture}
+\end{document}

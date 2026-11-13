@@ -1,0 +1,26 @@
+% Figura 3(b) — entidade timeflags, comparador combinacional (Questão 2)
+% Descrição: ../descricoes/figura_03b_timeflags.md
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \mostrarumtrue
+  \caixa{6.4}{5.3}{timeflags}
+
+  \entrada{1.60}{cont\_dezena}{4}{BCD}
+  \entrada{3.10}{cont\_unidade}{4}{BCD}
+
+  \saida{0.90}{T5}{1}{tempo $\geq$ 05}
+  \saida{1.85}{T6}{1}{tempo $\geq$ 06}
+  \saida{2.80}{T20}{1}{tempo $\geq$ 20}
+  \saida{3.75}{T60}{1}{tempo $\geq$ 60}
+
+  % faixa "lógica combinacional"
+  \draw[dashed, line width=.5pt] (0,-4.60) -- (6.4,-4.60);
+  \node[nota] at (3.2,-4.95) {lógica combinacional: sem clock, sem reset, sem memória};
+
+  \rodape{10.0}{%
+    A comparação é feita sobre \textbf{dígitos BCD válidos} (dezena $|$ unidade);
+    os marcos são \texttt{05}, \texttt{06}, \texttt{20} e \texttt{60} em BCD.}
+\end{tikzpicture}
+\end{document}

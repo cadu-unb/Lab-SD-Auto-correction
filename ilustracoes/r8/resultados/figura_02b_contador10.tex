@@ -1,0 +1,47 @@
+% Figura 2(b) — entidade contador10 (Questão 1)
+% Descrição: ../descricoes/figura_02b_contador10.md
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \caixa{6.2}{5.8}{contador10}
+
+  \entrada{0.85}{reset}{1}{síncrono}
+  \entrada{1.75}{clock}{1}{}
+  \entrada{2.60}{/enable}{1}{ativo em nível baixo}
+  \entrada{3.50}{/RCI}{1}{ativo em nível baixo}
+  \entrada{4.40}{load}{1}{síncrono}
+  \entrada{5.20}{D}{4}{}
+
+  \saida{1.20}{Q}{4}{BCD, 0000 a 1001}
+  \saida{3.50}{/RCO}{1}{ativo em nível baixo}
+
+  \rodape{9.8}{%
+    A contagem é habilitada quando \texttt{/enable = '0'} \textbf{e} \texttt{/RCI = '0'}.
+    \texttt{/RCO = '0'} se e somente se \texttt{Q = "1001"}.\\[2pt]
+    \textbf{Prioridade:} \texttt{reset} síncrono $>$ \texttt{load} síncrono $>$ contagem.
+    Com \texttt{load = '1'} o contador vai para o estado indicado por \texttt{D}.}
+
+  % --- faixa dos 10 estados (Moore) ---
+  \begin{scope}[shift={(-1.8,-8.55)}]
+    \node[font=\scriptsize\bfseries, anchor=west] at (0,.45) {ESTADOS VÁLIDOS (BCD)};
+    \node[estado] (e0) at (0.95,0)  {0000 (0)};
+    \node[estado] (e1) at (3.05,0)  {0001 (1)};
+    \node[font=\small]  (ed) at (4.85,0)  {\ldots};
+    \node[estado] (e9) at (6.75,0)  {1001 (9)};
+    \draw[seta] (e0) -- (e1);
+    \draw[seta] (e1) -- (ed);
+    \draw[seta] (ed) -- (e9);
+    \draw[seta] (e9.south) -- ++(0,-.45) -| (e0.south);
+    \node[nota, anchor=north] at (3.85,-.62) {depois de 1001 volta a 0000};
+  \end{scope}
+
+  % --- cascata ---
+  \begin{scope}[shift={(-1.8,-11.35)}]
+    \node[font=\scriptsize\bfseries, anchor=west] at (0,.45) {CASCATA};
+    \node[estado, minimum width=2.4cm] (u) at (1.3,0) {contador10 (unidade)};
+    \node[estado, minimum width=2.4cm] (d) at (6.4,0) {contador10 (dezena)};
+    \draw[seta] (u.east) -- node[above, font=\ttfamily\scriptsize] {/RCO $\rightarrow$ /RCI} (d.west);
+  \end{scope}
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,86 @@
+% caixapreta.sty — macros para desenhar "caixas pretas" (entidades VHDL) em TikZ.
+% Uso: ver figura_*.tex. Todas as figuras do Roteiro 08 usam este pacote,
+% para ficarem com o mesmo estilo, a mesma espessura e a mesma notação de barramento.
+%
+% Sistema de coordenadas: origem no canto superior esquerdo da caixa;
+% y é dado em cm PARA BAIXO (positivo) em todos os macros.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{caixapreta}[2026/11/13 Caixas pretas para roteiros de VHDL]
+
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{lmodern}
+\RequirePackage{etoolbox}
+\RequirePackage{textcomp}
+\RequirePackage{upquote}   % aspas retas em \texttt: '0'
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\renewcommand{\familydefault}{\sfdefault}
+
+\newif\ifmostrarum   % \mostrarumtrue => escreve "1 bit" nos fios de um bit
+\mostrarumfalse
+
+\newcommand{\fioL}{1.8}    % comprimento do fio externo
+\newcommand{\fioM}{0.9}    % metade do fio (posição do traço de barramento)
+
+\tikzset{
+  caixa/.style  = {draw, line width=1pt, fill=white},
+  fio/.style    = {-{Stealth[length=2.6mm,width=2mm]}, line width=.7pt},
+  barr/.style   = {-{Stealth[length=2.6mm,width=2mm]}, line width=1.7pt},
+  rotulo/.style = {font=\ttfamily\small},
+  nota/.style   = {font=\scriptsize\itshape},
+  grupo/.style  = {font=\scriptsize\bfseries},
+  estado/.style = {draw, rounded corners=2pt, line width=.7pt, font=\ttfamily\scriptsize,
+                   inner sep=3pt, minimum height=.6cm, fill=white},
+  seta/.style   = {-{Stealth[length=2.2mm,width=1.7mm]}, line width=.7pt},
+}
+
+% \caixa{largura}{altura}{título}
+\newcommand{\caixa}[3]{%
+  \def\caixaW{#1}\def\caixaH{#2}%
+  \draw[caixa] (0,0) rectangle (#1,-#2);
+  \pgfmathsetmacro{\caixaCx}{#1/2}%
+  \node[font=\bfseries\normalsize, anchor=south] at (\caixaCx,.12) {#3};}
+
+% traço de barramento + rótulo de largura: \bitsrotulo{x}{y}{bits}
+\newcommand{\bitsrotulo}[3]{%
+  \ifnum#3>1
+    \draw[line width=.7pt] ({#1-.06},{#2-.12}) -- ({#1+.06},{#2+.12});
+    \node[font=\scriptsize, anchor=south] at (#1,{#2+.09}) {#3 bits};
+  \else
+    \ifmostrarum\node[font=\scriptsize, anchor=south] at (#1,{#2+.04}) {1 bit};\fi
+  \fi}
+
+% \entrada{y}{rótulo}{bits}{nota}   (nota pode ser vazia)
+\newcommand{\entrada}[4]{%
+  \ifnum#3>1 \draw[barr] (-\fioL,-#1) -- (0,-#1);\else\draw[fio] (-\fioL,-#1) -- (0,-#1);\fi
+  \bitsrotulo{-\fioM}{-#1}{#3}%
+  \ifstrempty{#4}%
+    {\node[rotulo, anchor=west] at (.15,-#1) {#2};}%
+    {\node[rotulo, anchor=west] at (.15,{-#1+.14}) {#2};
+     \node[nota,   anchor=west] at (.15,{-#1-.2})  {#4};}}
+
+% \saida{y}{rótulo}{bits}{nota}
+\newcommand{\saida}[4]{%
+  \ifnum#3>1 \draw[barr] (\caixaW,-#1) -- ({\caixaW+\fioL},-#1);\else\draw[fio] (\caixaW,-#1) -- ({\caixaW+\fioL},-#1);\fi
+  \bitsrotulo{\caixaW+\fioM}{-#1}{#3}%
+  \ifstrempty{#4}%
+    {\node[rotulo, anchor=east] at ({\caixaW-.15},-#1) {#2};}%
+    {\node[rotulo, anchor=east] at ({\caixaW-.15},{-#1+.14}) {#2};
+     \node[nota,   anchor=east] at ({\caixaW-.15},{-#1-.2})  {#4};}}
+
+% títulos de grupo e divisórias (metade esquerda / metade direita da caixa)
+\newcommand{\grupoesq}[2]{\node[grupo, anchor=west] at (.15,-#1) {\MakeUppercase{#2}};}
+\newcommand{\grupodir}[2]{\node[grupo, anchor=east] at ({\caixaW-.15},-#1) {\MakeUppercase{#2}};}
+\newcommand{\divesq}[1]{\pgfmathsetmacro{\tmpx}{\caixaW/2-.1}\draw[dashed, line width=.5pt] (0,-#1) -- (\tmpx,-#1);}
+\newcommand{\divdir}[1]{\pgfmathsetmacro{\tmpx}{\caixaW/2+.1}\draw[dashed, line width=.5pt] (\tmpx,-#1) -- (\caixaW,-#1);}
+
+% anotações externas
+\newcommand{\constante}[2]{\node[font=\ttfamily\small, anchor=east] at ({-\fioL-.1},-#1) {#2};}
+\newcommand{\origem}[2]{\node[nota, anchor=east] at ({-\fioL-.1},-#1) {#2};}
+\newcommand{\destino}[2]{\node[nota, anchor=west] at ({\caixaW+\fioL+.1},-#1) {#2};}
+
+% texto de legenda sob a caixa: \rodape{largura em cm}{texto}
+\newcommand{\rodape}[2]{%
+  \node[anchor=north west, text width=#1cm, font={\footnotesize\hyphenpenalty=10000 \exhyphenpenalty=10000 }, align=left]
+       at (-\fioL,{-\caixaH-.35}) {#2};}

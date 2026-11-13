@@ -1,0 +1,30 @@
+% Figura 3(a) — interface do temporizador (Questão 2)
+% Descrição: ../descricoes/figura_03a_temporizador.md
+% Correção da auditoria: o exemplo mostra os QUATRO flags, pois T_n significa
+% "já se passaram n segundos" (tempo >= n), e não "o tempo é exatamente n".
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \mostrarumtrue
+  \caixa{6.4}{7.2}{Temporizador do semáforo}
+
+  \entrada{1.40}{reset}{1}{síncrono}
+  \entrada{2.45}{clock}{1}{1 Hz}
+
+  \grupodir{0.55}{marcos de tempo}
+  \saida{1.25}{T5}{1}{5 s}
+  \saida{2.15}{T6}{1}{6 s}
+  \saida{3.05}{T20}{1}{20 s}
+  \saida{3.95}{T60}{1}{60 s}
+  \divdir{4.55}
+  \grupodir{4.90}{tempo em BCD}
+  \saida{5.60}{cont\_dezena}{4}{}
+  \saida{6.50}{cont\_unidade}{4}{}
+
+  \rodape{10.8}{%
+    Cada flag vale 1 quando o marco de tempo \textbf{já foi alcançado} (tempo $\geq$ marco).\\[2pt]
+    \textit{Exemplo:} \texttt{cont\_dezena:cont\_unidade} = 20 $\Rightarrow$
+    \texttt{T5} = 1, \texttt{T6} = 1, \texttt{T20} = 1, \texttt{T60} = 0.}
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,81 @@
+% Figura 3(c) — arquitetura do sistema de temporização (Questão 2)
+% Descrição: ../descricoes/figura_03c_arquitetura_temporizador.md
+%
+% Fluxo: contagem -> comparação -> flags (sem realimentação).
+% DESVIO EDITORIAL DO ORIGINAL: no PDF, a Figura 3(c) só leva T5..T60 para fora da moldura,
+% mas a Figura 3(a) promete também cont_dezena e cont_unidade. As linhas pontilhadas
+% ("saídas BCD expostas") reconciliam as duas, derivadas dos MESMOS fios que alimentam
+% timeflags (sem duplicar contadores).
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  % ---------- moldura do sistema ----------
+  \draw[line width=1.2pt, rounded corners=3pt] (0.5,0) rectangle (17.0,-10.0);
+  \node[font=\bfseries\normalsize, anchor=west] at (0.8,-0.4) {Sistema de temporização};
+
+  % ---------- contador100 ----------
+  \begin{scope}[shift={(4.4,-1.6)}]
+    \caixa{5.2}{6.1}{contador100}
+    \entrada{1.00}{reset}{1}{síncrono}
+    \entrada{1.90}{clock}{1}{1 Hz}
+    \entrada{2.80}{/enable}{1}{ativo em nível baixo}
+    \entrada{3.70}{load}{1}{}
+    \entrada{4.60}{dezload}{4}{}
+    \entrada{5.40}{uniload}{4}{}
+    \constante{2.80}{'0'}
+    \constante{3.70}{'0'}
+    \constante{4.60}{"0000"}
+    \constante{5.40}{"0000"}
+    % rótulos das saídas (o fio é o mesmo que entra em timeflags)
+    \node[rotulo, anchor=east] at (5.05,-1.60) {cont\_dezena};
+    \node[rotulo, anchor=east] at (5.05,-2.80) {cont\_unidade};
+  \end{scope}
+  % reset e clock vêm de fora da moldura
+  \draw[line width=.7pt] (-1.4,-2.60) -- (2.6,-2.60);
+  \draw[line width=.7pt] (-1.4,-3.50) -- (2.6,-3.50);
+  \node[rotulo, anchor=east] at (-1.5,-2.60) {reset};
+  \node[rotulo, anchor=east] at (-1.5,-3.50) {clock};
+
+  % ---------- timeflags ----------
+  \begin{scope}[shift={(11.4,-1.6)}]
+    \mostrarumtrue
+    \caixa{4.4}{4.1}{timeflags}
+    \entrada{1.60}{cont\_dezena}{4}{}
+    \entrada{2.80}{cont\_unidade}{4}{}
+    \saida{0.90}{T5}{1}{}
+    \saida{1.75}{T6}{1}{}
+    \saida{2.60}{T20}{1}{}
+    \saida{3.45}{T60}{1}{}
+    \node[nota] at (2.2,-3.82) {combinacional};
+  \end{scope}
+  % nomes dos flags fora da moldura
+  \foreach \y/\n in {-2.5/T5, -3.35/T6, -4.2/T20, -5.05/T60}
+    \node[rotulo, anchor=west] at (17.7,\y) {\n};
+  % o fio de cada flag continua além da moldura
+  \foreach \y in {-2.5,-3.35,-4.2,-5.05}
+    \draw[line width=.7pt] (17.0,\y) -- (17.6,\y);
+
+  % ---------- derivação: saídas BCD expostas ----------
+  \fill (9.95,-3.20) circle (.07);
+  \fill (9.95,-4.40) circle (.07);
+  \draw[densely dotted, line width=.9pt, -{Stealth[length=2.6mm,width=2mm]}]
+        (9.95,-3.20) -- (9.95,-0.85) -- (17.6,-0.85);
+  \draw[densely dotted, line width=.9pt, -{Stealth[length=2.6mm,width=2mm]}]
+        (9.95,-4.40) -- (9.95,-8.80) -- (17.6,-8.80);
+  \node[rotulo, anchor=west] at (17.7,-0.85) {cont\_dezena};
+  \node[rotulo, anchor=west] at (17.7,-8.80) {cont\_unidade};
+  \node[nota, anchor=west] at (17.7,-1.2) {4 bits, BCD};
+  \node[nota, anchor=west] at (17.7,-9.15) {4 bits, BCD};
+  \node[nota, anchor=south west] at (11.4,-0.80) {saídas BCD expostas (derivação dos mesmos fios)};
+  \node[nota, anchor=south west] at (11.4,-8.75) {saídas BCD expostas (derivação dos mesmos fios)};
+
+  % ---------- legenda ----------
+  \node[anchor=north west, text width=18.5cm, font={\footnotesize\hyphenpenalty=10000 }, align=left]
+       at (-1.5,-10.4) {%
+    \textbf{Fluxo:} contagem $\rightarrow$ comparação $\rightarrow$ flags (sem realimentação).
+    O \texttt{clock} entra só no contador: \texttt{timeflags} é combinacional.
+    \texttt{/enable = '0'} habilita a contagem (ativo em nível baixo); \texttt{load = '0'} desativa a carga.
+    Linhas pontilhadas: derivação dos mesmos barramentos, sem duplicar contadores.};
+\end{tikzpicture}
+\end{document}

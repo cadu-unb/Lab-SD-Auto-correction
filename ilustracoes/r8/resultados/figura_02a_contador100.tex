@@ -1,0 +1,38 @@
+% Figura 2(a) — entidade contador100 em operação livre (Questão 1)
+% Descrição: ../descricoes/figura_02a_contador100.md
+% Mesma caixa da Figura 1; a diferença são as constantes ligadas às entradas.
+\documentclass[border=8pt]{standalone}
+\usepackage{caixapreta}
+\begin{document}
+\begin{tikzpicture}
+  \caixa{6.2}{6.6}{contador100}
+
+  \grupoesq{0.55}{controle}
+  \entrada{1.25}{reset}{1}{síncrono}
+  \entrada{2.10}{clock}{1}{1 Hz}
+  \entrada{2.95}{/enable}{1}{ativo em nível baixo}
+  \entrada{3.80}{load}{1}{síncrono}
+  \divesq{4.35}
+  \grupoesq{4.65}{valor de carga}
+  \entrada{5.25}{dezload}{4}{}
+  \entrada{6.05}{uniload}{4}{}
+
+  % constantes ligadas às entradas
+  \constante{2.95}{'0'}
+  \constante{3.80}{'0'}
+  \constante{5.25}{"0000"}
+  \constante{6.05}{"0000"}
+  \origem{1.25}{do sistema}
+  \origem{2.10}{do sistema}
+
+  \grupodir{0.55}{saída BCD}
+  \saida{1.40}{cont\_dezena}{4}{dezena}
+  \saida{2.40}{cont\_unidade}{4}{unidade}
+
+  \rodape{10.6}{%
+    \texttt{/enable = '0'} \textbf{habilita} a contagem (ativo em nível baixo);
+    \texttt{load = '0'} desativa a carga, então \texttt{dezload} e \texttt{uniload} não são carregados.\\[2pt]
+    \textbf{Contagem:} 00 $\rightarrow$ 01 $\rightarrow$ \ldots\ $\rightarrow$ 99 $\rightarrow$ 00.
+    \textbf{Arquitetura:} dois \texttt{contador10} em cascata.}
+\end{tikzpicture}
+\end{document}
