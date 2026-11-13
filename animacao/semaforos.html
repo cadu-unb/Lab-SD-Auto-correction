@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semáforos – mini animação</title>
+<style>
+  body{margin:0;padding:16px;background:#1b1d21;color:#e6e6e6;font-family:system-ui,Segoe UI,sans-serif;
+       display:flex;flex-direction:column;align-items:center;gap:10px}
+  canvas{width:100%;max-width:1050px;aspect-ratio:21/12;border-radius:8px;background:#000}
+  .bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:14px}
+  button{background:#2f3540;color:#e6e6e6;border:1px solid #454c59;border-radius:6px;padding:6px 12px;cursor:pointer}
+  button:hover{background:#3a4150}
+  #hud{font-variant-numeric:tabular-nums}
+  .flags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .flag{display:flex;align-items:center;gap:8px;background:#262a31;border:1px solid #3a404b;border-radius:999px;
+        padding:4px 12px 4px 8px;font-size:13px;min-width:120px}
+  .flag i{width:14px;height:14px;border-radius:50%;background:#555;box-shadow:0 0 0 2px #111 inset}
+  .flag b{font-weight:700}
+  .flag small{opacity:.65;margin-left:auto}
+  .flag.red i{background:#ff4d4d;box-shadow:0 0 8px #ff4d4d}
+  .flag.yellow i{background:#ffd24d;box-shadow:0 0 8px #ffd24d}
+  .flag.green i{background:#4dff7a;box-shadow:0 0 8px #4dff7a}
+  .flag.off i{background:#555;box-shadow:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button id="pp">⏸ Pausar</button>
+  <button id="rs">↺ Reiniciar</button>
+  <label>Velocidade <input id="sp" type="range" min="0.5" max="4" step="0.5" value="1"> <span id="spv">1×</span></label>
+  <span id="hud"></span>
+</div>
+<div id="flags" class="flags"></div>
+
+<script>
+/* =====================================================================
+   MAPA — espelho do YAML (coordenadas em células; pos_dim = [x, y, larg, alt])
+   rotas: pos/to/via em células (centro = +0.5). parar = onde o carro respeita luz.
+   ===================================================================== */
+const MAPA = {
+  largura: 21, altura: 12,
+  trechos: [
+    {tipo: 'calcada',     pos_dim: [ 0,  0, 21, 2]},
+    {tipo: 'pista_oeste', pos_dim: [ 0,  2, 21, 3]},   // topo  → x=0
+    {tipo: 'canteiro',    pos_dim: [ 0,  5, 21, 2]},
+    {tipo: 'pista_leste', pos_dim: [ 0,  7, 21, 3]},   // baixo → x=20
+    {tipo: 'pista_ret',   pos_dim: [10,  5,  3, 2]},
+    {tipo: 'calcada',     pos_dim: [ 0, 10, 21, 2]},
+    {tipo: 'pista_aces',  pos_dim: [ 1, 10,  3, 2]},
+  ],
+  objetos: [
+    {tipo: 'semaforo_A', pos_dim: [ 2,  9, 1, 1]},
+    {tipo: 'semaforo_B', pos_dim: [ 1,  7, 1, 1]},
+    {tipo: 'semaforo_C', pos_dim: [17,  8, 1, 1]},
+    {tipo: 'semaforo_D', pos_dim: [11,  6, 1, 1]},
+    {tipo: 'semaforo_E', pos_dim: [17,  4, 1, 1]},
+    {tipo: 'faixa_AB',   pos_dim: [ 1, 10, 3, 1]},
+    {tipo: 'faixa_ED',   pos_dim: [17,  2, 1, 3]},
+    {tipo: 'faixa_DC',   pos_dim: [17,  7, 1, 3]},
+  ],
+  rotas: [
+    {tipo: 'carro_1', pos: [21, 3], to: [0, 3], cada: [2.5, 5],
+       parar: {pt: [18.1, 3.5], luz: 'E', faixa: 'faixa_ED'}},
+    {tipo: 'carro_2', pos: [0, 8], to: [21, 8], cada: [2.5, 5],
+       parar: [{pt: [0.95, 8.5], luz: 'B'},                      // B: pista, oposto de A
+               {pt: [16.9, 8.5], luz: 'C', faixa: 'faixa_DC'}]},
+    {tipo: 'carro_3', pos: [0, 8], to: [0, 3], via: [[11, 8], [11, 3]], cada: [7, 11],
+       parar: [{pt: [0.95, 8.5], luz: 'B'},
+               {pt: [11.5, 5.7], luz: 'D', ceder: {rota: ['carro_1'], x: [9, 17.9]}}]},
+    {tipo: 'carro_4', pos: [2, 12], to: [21, 8], via: [[2, 8]], cada: [9, 15],   // sai do acesso, entra na pista leste
+       parar: {pt: [2.5, 11.2], luz: 'A', faixa: 'faixa_AB', ceder: {rota: ['carro_2', 'carro_3'], x: [0.9, 4.5]}}},
+    {tipo: 'pedestre_1', pos: [0, 10], to: [4, 10], y: 10.5, faixa: 'faixa_AB'},
+    {tipo: 'pedestre_2', pos: [17, 1], to: [17, 5.6], dx: 0.3, faixa: 'faixa_ED'},
+    {tipo: 'pedestre_3', pos: [17, 6.6], to: [17, 10], dx: 0.3, faixa: 'faixa_DC', pausa: [8, 16]},   // pausa longa: C só fecha de vez em quando
+  ],
+};
+
+/* ---------- constantes ---------- */
+const S = 50, W = MAPA.largura, H = MAPA.altura;
+const CICLO = 20, VMAX = 3.2, ACC = 4, DEC = 7, LEN = 0.86, PV = 1.2;
+
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let dpr = 1;
+function fit(){ dpr = window.devicePixelRatio || 1; canvas.width = W*S*dpr; canvas.height = H*S*dpr; }
+fit();
+
+const rects = {};
+MAPA.objetos.forEach(o => { const [x,y,w,h] = o.pos_dim; rects[o.tipo] = {x,y,w,h}; });
+const inRect = (r, px, py, m = 0) => px >= r.x-m && px <= r.x+r.w+m && py >= r.y-m && py <= r.y+r.h+m;
+const rand = ([a,b]) => a + Math.random()*(b-a);
+
+/* ---------- controlador: ciclo de 20 s ----------
+   0–8 carros verde | 8–10 amarelo | 10–16 pedestre verde | 16–18 pedestre piscando | 18–20 tudo vermelho */
+function luzes(t){
+  const c = t % CICLO;
+  return {
+    carro:   c < 8 ? 'green' : c < 10 ? 'yellow' : 'red',
+    ped:     c >= 10 && c < 16 ? 'green' : c >= 16 && c < 18 ? 'flash' : 'red',
+    retorno: c >= 10 && c < 18 ? 'green' : 'red',   // D = oposto de E (abre quando E fecha); independe de C
+    oposto:  c < 11 ? 'red' : 'green',              // B = oposto de A (verde só quando A está vermelho; 1 s de folga)
+  };
+}
+const LUZ_DE = {A:'carro', B:'oposto', C:'carroC', D:'retorno', E:'carro'};
+const PED_DE = {faixa_AB:'ped', faixa_ED:'ped', faixa_DC:'pedC'};
+
+/* ---------- C: assíncrono, só fecha se o pedestre pedir (botão) ----------
+   verde (espera pedido, mín. MIN_VERDE s) → amarelo 2 s → vermelho 1 s (limpa) → ped. verde 6 s
+   → ped. piscando 2 s → vermelho 1 s → volta a verde. Independe do ciclo de 20 s e de D. */
+const MIN_VERDE = 4;
+const SEQ_C = {verde:null, amarelo:2, limpa1:1, pedverde:6, piscando:2, limpa2:1};
+const PROX_C = {amarelo:'limpa1', limpa1:'pedverde', pedverde:'piscando', piscando:'limpa2', limpa2:'verde'};
+let CTL = {fase:'verde', t:0, pedido:false};
+function pedirC(){ if (!(CTL.pedido)) CTL.pedido = true; }
+function stepC(dt){
+  CTL.t += dt;
+  if (CTL.fase === 'verde'){
+    if (CTL.pedido && CTL.t >= MIN_VERDE){ CTL.fase = 'amarelo'; CTL.t = 0; }
+    return;
+  }
+  if (CTL.t >= SEQ_C[CTL.fase]){
+    CTL.fase = PROX_C[CTL.fase]; CTL.t = 0;
+    if (CTL.fase === 'pedverde') CTL.pedido = false;   // pedido atendido
+  }
+}
+function estados(){
+  return {...luzes(t),
+    carroC: CTL.fase === 'verde' ? 'green' : CTL.fase === 'amarelo' ? 'yellow' : 'red',
+    pedC:   CTL.fase === 'pedverde' ? 'green' : CTL.fase === 'piscando' ? 'flash' : 'red'};
+}
+const FASES = c => c < 8 ? 'carros: verde' : c < 10 ? 'carros: amarelo' : c < 16 ? 'pedestres: verde'
+                 : c < 18 ? 'pedestres: piscando' : 'tudo vermelho';
+
+/* ---------- rotas -> polilinhas ---------- */
+function buildPath(r){
+  const pts = [r.pos, ...(r.via || []), r.to].map(([x,y]) => [x+0.5, y+0.5]);
+  const ext = (a,b) => { const dx=b[0]-a[0], dy=b[1]-a[1], l=Math.hypot(dx,dy); return [b[0]+dx/l*1.5, b[1]+dy/l*1.5]; };
+  pts.unshift(ext(pts[1], pts[0]));
+  pts.push(ext(pts[pts.length-2], pts[pts.length-1]));
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i-1] + Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  return {pts, cum, len: cum[cum.length-1]};
+}
+function posAt(p, s){
+  s = Math.max(0, Math.min(p.len, s));
+  let i = 1; while (i < p.pts.length-1 && p.cum[i] < s) i++;
+  const a = p.pts[i-1], b = p.pts[i], l = p.cum[i]-p.cum[i-1] || 1, t = (s-p.cum[i-1])/l;
+  return {x: a[0]+(b[0]-a[0])*t, y: a[1]+(b[1]-a[1])*t, hx: (b[0]-a[0])/l, hy: (b[1]-a[1])/l};
+}
+function projectS(p, pt){
+  let best = {d: Infinity, s: 0};
+  for (let i = 1; i < p.pts.length; i++){
+    const a = p.pts[i-1], b = p.pts[i], dx = b[0]-a[0], dy = b[1]-a[1], l2 = dx*dx+dy*dy;
+    const t = Math.max(0, Math.min(1, ((pt[0]-a[0])*dx + (pt[1]-a[1])*dy)/l2));
+    const d = Math.hypot(a[0]+dx*t-pt[0], a[1]+dy*t-pt[1]);
+    if (d < best.d) best = {d, s: p.cum[i-1] + t*Math.sqrt(l2)};
+  }
+  return best.s;
+}
+
+const rotasCarro = MAPA.rotas.filter(r => r.tipo.startsWith('carro')).map(r => {
+  const path = buildPath(r);
+  const paradas = [].concat(r.parar || []).map(p => ({...p, sLinha: projectS(path, p.pt)}));
+  return {...r, id: r.tipo, path, paradas, timer: rand([0, 1.5])};
+});
+const CORES = ['#e4572e','#f2b134','#3d8bd9','#7fbf5c','#c9c9d1','#9b59b6','#ee6f9a'];
+
+/* ---------- estado ---------- */
+let t, cars, peds;
+function reset(){
+  t = 0; cars = []; CTL = {fase:'verde', t:0, pedido:false};
+  rotasCarro.forEach(r => r.timer = rand([0, 1.5]));
+  peds = MAPA.rotas.filter(r => r.tipo.startsWith('pedestre')).map((r, i) => {
+    const x0 = r.pos[0] + (r.dx ?? 0.5), y0 = r.y ?? (r.pos[1] + (Number.isInteger(r.pos[1]) ? 0.5 : 0));
+    const x1 = r.to[0]  + (r.dx ?? 0.5), y1 = r.y ?? (r.to[1]  + (Number.isInteger(r.to[1])  ? 0.5 : 0));
+    return {x: x0, y: y0, alvo: [x1, y1], volta: [x0, y0], faixa: r.faixa, espera: 1 + i*1.3, pausa: r.pausa ?? [1.5, 3.5],
+            cor: ['#ffd166','#06d6a0','#ef8cc3'][i % 3]};
+  });
+}
+reset();
+
+/* ---------- simulação ---------- */
+function step(dt){
+  t += dt;
+  stepC(dt);
+  const L = estados();
+
+  // gera carros
+  for (const r of rotasCarro){
+    r.timer -= dt;
+    if (r.timer <= 0){
+      if (cars.some(c => Math.hypot(c.x - (r.path.pts[0][0]), c.y - r.path.pts[0][1]) < 2.2)) r.timer = 0.3;
+      else { cars.push({rota: r, s: 0, v: VMAX*0.8, cor: CORES[Math.random()*CORES.length|0], ang: null, x: r.path.pts[0][0], y: r.path.pts[0][1], hx: 1, hy: 0});
+             r.timer = rand(r.cada); }
+    }
+  }
+
+  // carros
+  for (const c of cars){
+    const r = c.rota, p = r.path;
+    const pos = posAt(p, c.s); c.x = pos.x; c.y = pos.y; c.hx = pos.hx; c.hy = pos.hy;
+    const alvoAng = Math.atan2(pos.hy, pos.hx);
+    if (c.ang === null) c.ang = alvoAng;
+    let da = alvoAng - c.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+    c.ang += da * Math.min(1, dt*12);
+
+    let gap = Infinity;
+    const fs = c.s + LEN/2;
+    for (const pa of r.paradas){
+      const g = pa.sLinha - fs;
+      if (g > -0.02){
+        const estado = L[LUZ_DE[pa.luz]];
+        const pedNaFaixa = pa.faixa && peds.some(q => inRect(rects[pa.faixa], q.x, q.y));
+        const ceder = pa.ceder && cars.some(o => pa.ceder.rota.includes(o.rota.id) && o.x >= pa.ceder.x[0] && o.x <= pa.ceder.x[1]);
+        const frenagem = c.v*c.v/(2*DEC) + 0.15;
+        if (estado === 'red' || pedNaFaixa || ceder || (estado === 'yellow' && (g > frenagem || c.v < 0.5))) gap = Math.min(gap, g);
+      }
+    }
+    for (const o of cars){
+      if (o === c) continue;
+      if (r.id === 'carro_1' && o.rota.id === 'carro_3' && Math.abs(o.hy) > 0.5) continue; // topo tem preferência
+      if (r.id === 'carro_4' && o.rota.id !== 'carro_4' && Math.abs(c.hy) > 0.5) continue;  // saindo do acesso: quem cede é a zona (ceder)
+      const dx = o.x - c.x, dy = o.y - c.y;
+      const fwd = dx*c.hx + dy*c.hy;
+      if (fwd <= 0) continue;
+      if (Math.abs(dx*c.hy - dy*c.hx) < 0.5) gap = Math.min(gap, fwd - LEN - 0.15);
+    }
+    gap = Math.max(gap, 0);
+    const vT = Math.min(VMAX, Math.sqrt(2*DEC*gap));
+    c.v += Math.max(-10*dt, Math.min(ACC*dt, vT - c.v));
+    c.s += Math.min(c.v*dt, gap);
+    c.freando = c.v < vT - 0.2 || c.v < 0.3;
+  }
+  cars = cars.filter(c => c.s < c.rota.path.len - 0.05);
+
+  // pedestres
+  for (const q of peds){
+    if (q.espera > 0){ q.espera -= dt; continue; }
+    const dx = q.alvo[0]-q.x, dy = q.alvo[1]-q.y, dist = Math.hypot(dx, dy);
+    if (dist < 1e-6){ [q.alvo, q.volta] = [q.volta, q.alvo]; q.espera = rand(q.pausa); continue; }
+    const passo = Math.min(PV*dt, dist), nx = q.x + dx/dist*passo, ny = q.y + dy/dist*passo;
+    const f = rects[q.faixa];
+    if (f && !inRect(f, q.x, q.y) && inRect(f, nx, ny)){
+      if (L[PED_DE[q.faixa]] !== 'green'){
+        if (q.faixa === 'faixa_DC') pedirC();   // aperta o botão ao chegar na faixa
+        continue;                               // espera o verde
+      }
+      if (cars.some(c => inRect(f, c.x, c.y, 0.45))) continue;   // espera carro liberar a faixa
+    }
+    q.x = nx; q.y = ny;
+    if (passo >= dist - 1e-6){ [q.alvo, q.volta] = [q.volta, q.alvo]; q.espera = rand(q.pausa); }
+  }
+}
+
+/* ---------- desenho ---------- */
+const COR = {calcada:'#b9bcc2', pista_oeste:'#3a3d43', pista_leste:'#3a3d43', canteiro:'#5b9a4c', pista_ret:'#3a3d43', pista_aces:'#3a3d43'};
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+
+function drawTrecho(tr){
+  const [x,y,w,h] = tr.pos_dim;
+  ctx.fillStyle = COR[tr.tipo]; ctx.fillRect(x,y,w,h);
+  if (tr.tipo === 'calcada'){
+    ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 0.03; ctx.setLineDash([]);
+    ctx.beginPath(); for (let i=0;i<=w;i++){ctx.moveTo(x+i,y);ctx.lineTo(x+i,y+h);} for (let j=0;j<=h;j++){ctx.moveTo(x,y+j);ctx.lineTo(x+w,y+j);} ctx.stroke();
+  }
+  if (tr.tipo === 'pista_oeste' || tr.tipo === 'pista_leste'){
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 0.05; ctx.setLineDash([0.5,0.5]);
+    ctx.beginPath(); for (let j=1;j<h;j++){ctx.moveTo(x,y+j);ctx.lineTo(x+w,y+j);} ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+function drawFaixa(o){
+  const [x,y,w,h] = o.pos_dim;
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  if (w > h) for (let i = 0.12; i < w; i += 0.5) ctx.fillRect(x+i, y+0.08, 0.26, h-0.16);
+  else       for (let j = 0.12; j < h; j += 0.5) ctx.fillRect(x+0.08, y+j, w-0.16, 0.26);
+}
+function lamp(cx, cy, on, cor){
+  ctx.beginPath(); ctx.arc(cx, cy, 0.1, 0, 7);
+  ctx.fillStyle = on ? cor : 'rgba(255,255,255,.12)';
+  if (on){ ctx.shadowColor = cor; ctx.shadowBlur = 10; }
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+function luz3(cx, cy, estado, letra){
+  ctx.fillStyle = '#111'; rr(cx-0.17, cy-0.45, 0.34, 0.9, 0.08); ctx.fill();
+  lamp(cx, cy-0.28, estado==='red',    '#ff4d4d');
+  lamp(cx, cy,      estado==='yellow', '#ffd24d');
+  lamp(cx, cy+0.28, estado==='green',  '#4dff7a');
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 0.26px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText(letra, cx+0.4, cy-0.3);
+}
+function luzPed(cx, cy, estado){
+  const piscaOn = Math.floor(t*2) % 2 === 0;
+  const verde = estado === 'green' || (estado === 'flash' && piscaOn);
+  ctx.fillStyle = '#111'; rr(cx-0.15, cy-0.3, 0.3, 0.6, 0.07); ctx.fill();
+  lamp(cx, cy-0.14, estado === 'red', '#ff4d4d');
+  lamp(cx, cy+0.14, verde, '#4dff7a');
+}
+function botao(cx, cy){
+  ctx.fillStyle = '#111'; rr(cx-0.14, cy-0.14, 0.28, 0.28, 0.06); ctx.fill();
+  lamp(cx, cy, CTL.pedido, '#ff9a2e');
+}
+function drawCar(c){
+  ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.ang);
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(-0.41,-0.2,0.86,0.5,0.1); ctx.fill();
+  ctx.fillStyle = c.cor; rr(-0.43,-0.25,0.86,0.5,0.11); ctx.fill();
+  ctx.fillStyle = 'rgba(20,30,45,.8)'; rr(0.06,-0.19,0.2,0.38,0.05); ctx.fill(); rr(-0.3,-0.19,0.14,0.38,0.05); ctx.fill();
+  ctx.fillStyle = '#fff6b0'; ctx.fillRect(0.39,-0.21,0.05,0.1); ctx.fillRect(0.39,0.11,0.05,0.1);
+  ctx.fillStyle = c.freando ? '#ff2b2b' : '#7a1c1c'; ctx.fillRect(-0.44,-0.21,0.05,0.1); ctx.fillRect(-0.44,0.11,0.05,0.1);
+  ctx.restore();
+}
+function drawPed(q){
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(q.x+0.04, q.y+0.05, 0.17, 0, 7); ctx.fill();
+  ctx.fillStyle = q.cor; ctx.beginPath(); ctx.arc(q.x, q.y, 0.17, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3b2a20'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.09, 0, 7); ctx.fill();
+}
+
+/* ---------- flags: um marcador por sinal ---------- */
+const NOME_ESTADO = {red:'vermelho', yellow:'amarelo', green:'verde', off:'apagado'};
+const SINAIS = [
+  {id:'A', desc:'acesso · oposto de B', est: L => L[LUZ_DE.A]},
+  {id:'B', desc:'pista · oposto de A',  est: L => L[LUZ_DE.B]},
+  {id:'C', desc:'sob demanda',    est: L => L[LUZ_DE.C],
+     txt: L => NOME_ESTADO[L[LUZ_DE.C]] + (CTL.pedido ? ' · pedido ✋' : '')},
+  {id:'D', desc:'oposto de E',    est: L => L[LUZ_DE.D]},
+  {id:'E', desc:'pista topo',     est: L => L[LUZ_DE.E]},
+  {id:'P', desc:'ped. ED·AB',     est: L => pedEst(L.ped),  txt: L => L.ped === 'flash' ? 'piscando' : NOME_ESTADO[L.ped]},
+  {id:'PC', desc:'ped. DC (botão)', est: L => pedEst(L.pedC), txt: L => L.pedC === 'flash' ? 'piscando' : NOME_ESTADO[L.pedC]},
+];
+function pedEst(e){ return e === 'flash' ? (Math.floor(t*2)%2 ? 'green' : 'off') : e; }
+const flagsEl = document.getElementById('flags');
+flagsEl.innerHTML = SINAIS.map(s => `<div class="flag" id="f${s.id}"><i></i><b>${s.id}</b><span></span><small>${s.desc}</small></div>`).join('');
+function atualizaFlags(L){
+  for (const s of SINAIS){
+    const e = s.est(L), el = document.getElementById('f' + s.id);
+    el.className = 'flag ' + e;
+    el.children[2].textContent = s.txt ? s.txt(L) : NOME_ESTADO[e];
+  }
+}
+
+function draw(){
+  ctx.setTransform(dpr*S, 0, 0, dpr*S, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const L = estados();
+  MAPA.trechos.forEach(drawTrecho);
+  MAPA.objetos.filter(o => o.tipo.startsWith('faixa')).forEach(drawFaixa);
+
+  // semáforos de pedestre nas pontas das faixas
+  for (const o of MAPA.objetos.filter(o => o.tipo.startsWith('faixa'))){
+    const [x,y,w,h] = o.pos_dim;
+    const e = L[PED_DE[o.tipo]];
+    if (w > h){ luzPed(x-0.5, y+1.5, e); luzPed(x+w+0.5, y+1.5, e); }
+    else      { luzPed(x+w+0.5, y-0.5, e); luzPed(x+w+0.5, y+h+0.5, e); }
+    if (o.tipo === 'faixa_DC'){ botao(x-0.4, y-0.5); botao(x-0.4, y+h+0.5); }   // botões de pedido
+  }
+  // semáforos de veículo
+  for (const o of MAPA.objetos.filter(o => o.tipo.startsWith('semaforo'))){
+    const letra = o.tipo.slice(-1);
+    luz3(o.pos_dim[0]+0.72, o.pos_dim[1]+0.5, L[LUZ_DE[letra]], letra);
+  }
+  cars.forEach(drawCar);
+  peds.forEach(drawPed);
+
+  atualizaFlags(L);
+  const c = t % CICLO;
+  document.getElementById('hud').textContent = `t = ${t.toFixed(1)} s · ciclo ${c.toFixed(1)}/${CICLO} s · ${FASES(c)} · C: ${CTL.fase}`;
+}
+
+/* ---------- loop e controles ---------- */
+let pausado = false, vel = 1, ultimo = performance.now();
+function frame(now){
+  const dt = Math.min(0.1, (now - ultimo)/1000); ultimo = now;
+  if (!pausado){
+    let resto = dt*vel;
+    while (resto > 0){ const d = Math.min(0.025, resto); step(d); resto -= d; }
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+document.getElementById('pp').onclick = e => { pausado = !pausado; e.target.textContent = pausado ? '▶ Continuar' : '⏸ Pausar'; };
+document.getElementById('rs').onclick = reset;
+document.getElementById('sp').oninput = e => { vel = +e.target.value; document.getElementById('spv').textContent = vel + '×'; };
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
