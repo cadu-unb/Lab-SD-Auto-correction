@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Máquina de refrigerante</title>
+<style>
+  :root{--bg:#f2f3f6;--txt:#14161a;--chip:#fff;--line:#b9bfc9;--acc:#1456a8}
+  @media (prefers-color-scheme: dark){:root{--bg:#14161a;--txt:#e8e9ec;--chip:#2a2f38;--line:#454c59;--acc:#6aa8ff}}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+       background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,sans-serif;padding:16px}
+  svg{width:min(320px,90vw);height:auto}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  button{font:inherit;color:var(--txt);background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  button.sel{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .lata{opacity:0} .lata.show{opacity:1;animation:queda .7s cubic-bezier(.3,.1,.5,1)}
+  @keyframes queda{from{transform:translateY(-60px)}to{transform:translateY(0)}}
+  .moeda{opacity:0} .moeda.show{opacity:1;animation:sobe .5s ease-out}
+  @keyframes sobe{from{transform:translateY(-14px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<svg viewBox="0 0 300 420" role="img" aria-label="Máquina de refrigerante">
+  <rect x="14" y="8" width="272" height="404" rx="18" fill="#b7312c" stroke="#5c1411" stroke-width="3"/>
+  <text x="150" y="38" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" letter-spacing="3">REFRI-MATIC</text>
+
+  <rect x="38" y="52" width="224" height="120" rx="8" fill="#23272e" stroke="#000" stroke-width="2"/>
+  <g>
+    <rect x="50" y="62" width="24" height="40" rx="4" fill="#e4572e"/><rect x="80" y="62" width="24" height="40" rx="4" fill="#e4572e"/>
+    <rect x="110" y="62" width="24" height="40" rx="4" fill="#f2b134"/><rect x="140" y="62" width="24" height="40" rx="4" fill="#f2b134"/>
+    <rect x="170" y="62" width="24" height="40" rx="4" fill="#3d8bd9"/><rect x="200" y="62" width="24" height="40" rx="4" fill="#3d8bd9"/>
+    <rect x="50" y="116" width="24" height="40" rx="4" fill="#7fbf5c"/><rect x="80" y="116" width="24" height="40" rx="4" fill="#7fbf5c"/>
+    <rect x="110" y="116" width="24" height="40" rx="4" fill="#9b59b6"/><rect x="140" y="116" width="24" height="40" rx="4" fill="#9b59b6"/>
+    <rect x="170" y="116" width="24" height="40" rx="4" fill="#e4572e"/><rect x="200" y="116" width="24" height="40" rx="4" fill="#f2b134"/>
+  </g>
+
+  <rect x="38" y="186" width="150" height="58" rx="6" fill="#06150b" stroke="#000" stroke-width="2"/>
+  <text id="disp"  x="46" y="214" font-size="26" font-family="ui-monospace,Consolas,monospace" fill="#43ff7a">R$ 0,00</text>
+  <text id="disp2" x="46" y="236" font-size="12" font-family="ui-monospace,Consolas,monospace" fill="#43ff7a">insira moedas</text>
+
+  <rect x="204" y="190" width="58" height="12" rx="3" fill="#111"/>
+  <rect x="208" y="194" width="50" height="4" rx="2" fill="#555"/>
+  <text x="233" y="218" text-anchor="middle" font-size="10" fill="#fff">MOEDAS</text>
+  <circle id="ledClk" cx="233" cy="234" r="6" fill="#444" stroke="#000"/>
+  <text x="233" y="256" text-anchor="middle" font-size="10" fill="#fff">clock</text>
+
+  <g font-size="11" fill="#fff" text-anchor="middle">
+    <circle id="mS"  cx="70"  cy="276" r="9" fill="#444" stroke="#000"/><text x="70"  y="300">refri</text>
+    <circle id="m25" cx="150" cy="276" r="9" fill="#444" stroke="#000"/><text x="150" y="300">troco 25</text>
+    <circle id="m50" cx="230" cy="276" r="9" fill="#444" stroke="#000"/><text x="230" y="300">troco 50</text>
+  </g>
+
+  <rect x="38" y="316" width="224" height="84" rx="8" fill="#1a1c20" stroke="#000" stroke-width="2"/>
+  <text x="46" y="332" font-size="10" fill="#aaa">RETIRADA</text>
+  <g id="lata" class="lata">
+    <rect x="62" y="342" width="34" height="50" rx="6" fill="#e4572e" stroke="#fff" stroke-width="1.5"/>
+    <rect x="62" y="356" width="34" height="14" fill="#fff"/>
+    <text x="79" y="367" text-anchor="middle" font-size="9" font-weight="700" fill="#b7312c">COLA</text>
+  </g>
+  <g id="c25" class="moeda"><circle cx="150" cy="370" r="15" fill="#c0c5cc" stroke="#555" stroke-width="2"/><text x="150" y="375" text-anchor="middle" font-size="13" font-weight="700" fill="#222">25</text></g>
+  <g id="c50" class="moeda"><circle cx="205" cy="370" r="19" fill="#e2b93b" stroke="#7a5d0c" stroke-width="2"/><text x="205" y="376" text-anchor="middle" font-size="15" font-weight="700" fill="#2a1d00">50</text></g>
+</svg>
+
+<div class="bar">
+  <button id="b25">Moeda R$ 0,25</button>
+  <button id="b50">Moeda R$ 0,50</button>
+  <button id="bC">Cancelar</button>
+</div>
+<div class="bar">
+  <button id="bSim" class="sel">Simulação: rodando</button>
+</div>
+
+<script>
+/* Moore: [próximo estado para A = 00, 01, 10, 11], saídas [refri, troco25, troco50] */
+const E = {
+  S0:  {p:['S0','S25','S50','S0'],     s:[0,0,0], d:['R$ 0,00','insira moedas']},
+  S25: {p:['S25','S50','S75','R25'],   s:[0,0,0], d:['R$ 0,25','insira moedas']},
+  S50: {p:['S50','S75','SODA','R50'],  s:[0,0,0], d:['R$ 0,50','insira moedas']},
+  S75: {p:['S75','SODA','SODA25','R75'], s:[0,0,0], d:['R$ 0,75','insira moedas']},
+  SODA:  {s:[1,0,0], d:['R$ 1,00','refri liberado!']},
+  SODA25:{s:[1,1,0], d:['R$ 1,25','refri + troco 0,25']},
+  R25: {s:[0,1,0], d:['CANCELADO','devolve R$ 0,25']},
+  R50: {s:[0,0,1], d:['CANCELADO','devolve R$ 0,50']},
+  R75: {s:[0,1,1], d:['CANCELADO','devolve 0,50+0,25']},
+};
+['SODA','SODA25','R25','R50','R75'].forEach(k => E[k].p = E.S0.p);   // depois de uma saída: como S0
+
+const $ = id => document.getElementById(id);
+const reinicia = (e, c) => { e.classList.remove(c); void e.getBoundingClientRect(); e.classList.add(c); };
+let estado = 'S0', A = 0, rodando = true, timer = null;
+
+function mostra(){
+  const [refri, t25, t50] = E[estado].s;
+  [['mS', refri], ['m25', t25], ['m50', t50]].forEach(([id, v]) => $(id).setAttribute('fill', v ? '#43ff7a' : '#444'));
+  $('disp').textContent = E[estado].d[0];
+  $('disp').setAttribute('font-size', E[estado].d[0].length > 8 ? 20 : 26);
+  $('disp2').textContent = E[estado].d[1];
+  [['lata', refri], ['c25', t25], ['c50', t50]].forEach(([id, v]) => {
+    const g = $(id), c = id === 'lata' ? 'lata' : 'moeda';
+    g.classList.toggle('show', !!v); if (v) reinicia(g, 'show');
+  });
+}
+
+function clock(){
+  estado = E[estado].p[A];          // lê A na borda de subida
+  A = 0;
+  document.querySelectorAll('.bar button.sel[data-a]').forEach(b => b.classList.remove('sel'));
+  $('ledClk').setAttribute('fill', '#ffe066'); setTimeout(() => $('ledClk').setAttribute('fill', '#444'), 180);
+  mostra();
+}
+
+function entrada(v, btn){
+  A = v;
+  ['b25','b50','bC'].forEach(id => $(id).classList.remove('sel'));
+  btn.classList.add('sel');
+}
+$('b25').dataset.a = 1; $('b50').dataset.a = 2; $('bC').dataset.a = 3;
+$('b25').onclick = e => entrada(1, e.currentTarget);
+$('b50').onclick = e => entrada(2, e.currentTarget);
+$('bC').onclick  = e => entrada(3, e.currentTarget);
+
+function liga(){ timer = setInterval(clock, 1000); }
+$('bSim').onclick = e => {
+  rodando = !rodando;
+  if (rodando) liga(); else { clearInterval(timer); timer = null; }
+  e.currentTarget.textContent = rodando ? 'Simulação: rodando' : 'Simulação: parada';
+  e.currentTarget.classList.toggle('sel', rodando);
+};
+
+mostra(); liga();
+</script>
+</body>
+</html>
